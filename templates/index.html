@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌐 Internet Connection Monitor (ICMd) 🔌</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; }
+        th { text-align: center; }
+        td { padding: 10px; }
+        .right { text-align: right; }
+        .left { text-align: left; }
+        .green { background-color: lightgreen; }
+        .yellow { background-color: yellow; }
+        .red { background-color: lightcoral; }
+    </style>
+</head>
+<body>
+    <h1>🌐 Internet Connection Monitor (ICMd) 🔌</h1>
+    <table>
+        <thead>
+            <tr>
+                <th class="right">N°</th>
+                <th class="right">ID</th>
+                <th class="left">Nombre</th>
+                <th class="right">IP</th>
+                <th class="right">Actualización</th>
+                <th class="right">Tiempo Transcurrido (s)</th>
+                <th class="center">Estado</th>
+            </tr>
+        </thead>
+        <tbody id="clients"></tbody>
+    </table>
+
+    <script>
+        const socket = io();
+        socket.emit('request_status');
+
+        function formatTimestamp(timestamp) {
+            if (timestamp === 0) return "N/A";
+            const date = new Date(timestamp * 1000);
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        socket.on('update_status', function(data) {
+            let row = document.getElementById(`client-${data.id}`);
+            if (!row) {
+                row = document.createElement('tr');
+                row.id = `client-${data.id}`;
+                row.innerHTML = `
+                    <td id="row-${data.id}" class="right"></td>
+                    <td id="id-${data.id}" class="right"></td>
+                    <td id="name-${data.id}" class="left"></td>
+                    <td id="ip-${data.id}" class="right"></td>
+                    <td id="timestamp-${data.id}" class="right"></td>
+                    <td id="elapsed-${data.id}" class="right"></td>
+                    <td id="status-${data.id}" class="center"></td>
+                `;
+                document.getElementById('clients').appendChild(row);
+            }
+
+            // Asignar valores a las celdas
+            document.getElementById(`row-${data.id}`).innerText = data.row;
+            document.getElementById(`id-${data.id}`).innerText = data.id;
+            document.getElementById(`name-${data.id}`).innerText = data.name || "N/A";
+            document.getElementById(`ip-${data.id}`).innerText = data.ip || "N/A";
+            document.getElementById(`timestamp-${data.id}`).innerText = formatTimestamp(data.timestamp);
+            document.getElementById(`elapsed-${data.id}`).innerText = data.timestamp === 0 ? "N/A" : data.elapsed.toFixed(1);
+            document.getElementById(`status-${data.id}`).innerText = data.status || "Desconocido";
+
+            // Aplicar color a toda la fila
+            row.className = data.color;
+        });
+
+        // Actualizar la tabla cada 5 segundos
+        setInterval(() => { socket.emit('request_status'); }, 5000);
+    </script>
+</body>
+</html>

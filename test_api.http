@@ -1,0 +1,19 @@
+### Test API ICMd
+
+### Send update
+POST http://localhost:8080/update
+content-type: application/json
+
+{
+    "id": "NELBREN",
+    "status": "✔"
+}
+
+### Send update 2
+POST http://localhost:8080/update
+content-type: application/json
+
+{
+    "id": "EMILIO",
+    "status": "✔"
+}
