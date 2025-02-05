@@ -40,9 +40,13 @@ def getStudents():
                 "row": row,
                 "name": name,
                 "last_update": 0,
-                "status": "❌",
-                "ip": "N/A"
+                # "status": "❌",
+                # "ip": "N/A"
+                "color": "yellow",
+                "ignored": False
             }
+            # if row == 2:
+            #    break
     return students
 
 

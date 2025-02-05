@@ -1,0 +1,241 @@
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { padding: 10px; border: 1px solid #ddd; }
+th { text-align: center; }
+td { padding: 10px; }
+.right { text-align: right; }
+.left { text-align: left; }
+.green { background-color: lightgreen; }
+.yellow { background-color: yellow; }
+.red { background-color: lightcoral; }
+
+.header-container {
+    display: flex;
+    align-items: center;  /* Alinear verticalmente */
+    gap: 15px;            /* Espacio entre el H1 y el botón */
+}
+
+#audio-toggle {
+    padding: 10px;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-left: auto;
+}
+
+.audio-on {
+    background-color: green;
+    color: white;
+    padding: 5px;
+    border-radius: 10px;
+    border: 5px solid black;
+    padding: 15px;
+    font-size: 28px;
+}
+
+.audio-off {
+    background-color: LightCoral;
+    color: white;
+    padding: 5px;
+    border-radius: 10px;
+    border: 5px solid black;
+    padding: 15px;
+    font-size: 28px;
+}
+
+.gray-row {
+    background-color: gray !important;
+    color: white;
+}
+
+.status-green {
+    background-color: lightgreen;
+    color: white;
+}
+
+.status-yellow {
+    background-color: yellow;
+    color: black;
+}
+
+.status-red {
+    background-color: pink;
+    color: white;
+}
+
+/* Estilo para el encabezado de la tabla */
+thead tr {
+    background-color: white; /* Fondo blanco */
+    font-weight: bold; /* Texto en negrita */
+}
+
+/* Bordes y diseño general de la tabla */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 2px solid black;
+    padding: 8px;
+}
+
+/* Asegurar que los encabezados no cambien de color con la tabla */
+th {
+    background-color: white !important;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+td:nth-child(1),
+td:nth-child(2) { 
+    text-align: right;
+}
+
+td:nth-child(2),
+td:nth-child(3) {  /* La tercera columna es 'Nombre' */
+    font-weight: bold;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+/* Alinear la IP, Actualización y Tiempo transcurrido a la derecha */
+td:nth-child(4),  /* IP (4ta columna) */
+td:nth-child(5),  /* Actualización (5ta columna) */
+td:nth-child(6) { /* Tiempo transcurrido (6ta columna) */
+    text-align: right;
+
+}
+
+/* Centrar Estado y Ausente (Checkbox) */
+td:nth-child(7),  /* Estado (7ma columna) */
+td:nth-child(8) { /* Ausente (8va columna) */
+    text-align: center;
+}
+
+.counter-box-ok {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0px;
+    background-color: green;
+    color: white;
+    padding: 0px;
+    border-radius: 5px;
+    border: 5px solid black;
+    font-size: 28px; /* Hace la letra más grande */
+    font-weight: bold;
+    text-align: center;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+.counter-box-warning {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0px;
+    background-color: yellow;
+    padding: 0px;
+    border-radius: 5px;
+    border: 5px solid black;
+    font-size: 28px; /* Hace la letra más grande */
+    font-weight: bold;
+    text-align: center;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+.counter-box-critical {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0px;
+    background-color: LightCoral;
+    color: black;
+    padding: 0px;
+    border-radius: 5px;
+    border: 5px solid black;
+    font-size: 28px; /* Hace la letra más grande */
+    font-weight: bold;
+    text-align: center;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+.counter-box-ignore {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0px;
+    background-color: gray;
+    color: white;
+    padding: 0px;
+    border-radius: 5px;
+    border: 5px solid black;
+    font-size: 28px; /* Hace la letra más grande */
+    font-weight: bold;
+    text-align: center;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+.counter-box-active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0px;
+    background-color: white;
+    color: black;
+    padding: 0px;
+    border-radius: 5px;
+    border: 5px solid black;
+    font-size: 28px; /* Hace la letra más grande */
+    font-weight: bold;
+    text-align: center;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+.counter-item {
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.code-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background-color: black;
+    padding: 10px;
+    border-radius: 10px;
+    border: 5px solid gray;
+    font-size: 26px; /* Hace la letra más grande */
+    font-weight: bold;
+    text-align: left;
+    color: white;
+}
+
+h1 {
+    font-weight: bold;
+    font-size: 42px;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+h2 {
+    font-weight: bold;
+    font-size: 24px;
+    font-family: "Lucida Console", "Courier New", monospace;
+    text-align: right;
+}
+
+.icmd-box {
+    display: flex;
+    justify-content: center;
+    align-items: right;
+    font-size: 24px; /* Hace la letra más grande */
+    font-weight: bold;
+    text-align: right;
+    color: black;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+a { 
+    color: red; 
+    font-weight: bold;
+}

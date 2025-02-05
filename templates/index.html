@@ -3,22 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌐 Internet Connection Monitor (ICMd) 🔌</title>
+    <title>🌐 Internet Connection Monitor (ICMd) 🔌 v1.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
-    <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #ddd; }
-        th { text-align: center; }
-        td { padding: 10px; }
-        .right { text-align: right; }
-        .left { text-align: left; }
-        .green { background-color: lightgreen; }
-        .yellow { background-color: yellow; }
-        .red { background-color: lightcoral; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
 </head>
-<body>
-    <h1>🌐 Internet Connection Monitor (ICMd) 🔌</h1>
+<body onclick="enableAudio()" onkeydown="enableAudio()">
+    <audio id="alert-sound" src="{{ url_for('static', filename='attention_tone_sm30-96953.mp3') }}" allow="autoplay"></audio>
+    <div class="header-container">
+        <div class="icmd-box">
+            Pasos:
+        </div>
+        <div class="code-box">
+            <code>
+                1️⃣ cd ICM
+            </code>
+        </div>
+        <div class="code-box">
+            <code>
+                2️⃣ ./ICM.bash {{ server_ip }} ID
+            </code>
+        </div>
+        <!-- Contadores -->
+        <div class="counter-box-ok">
+            <div class="counter-item" id="ok-count">0 ✔</div>
+        </div>
+        <div class="counter-box-warning">
+            <div class="counter-item" id="warning-count">0 ⚠️</div>
+        </div>
+        <div class="counter-box-critical">
+            <div class="counter-item" id="critical-count">0 ❌</div>
+        </div>
+        <div class="counter-box-active">
+            <div class="counter-item" id="active-count">0 ✅</div>
+        </div>
+        <div class="counter-box-ignore">
+            <div class="counter-item" id="ignore-count">0 ❎</div>
+        </div>
+        <button id="audio-toggle" onclick="enableAudio()" class="audio-off">🔇 </button>
+    </div>
     <table>
         <thead>
             <tr>
@@ -29,56 +51,12 @@
                 <th class="right">Actualización</th>
                 <th class="right">Tiempo Transcurrido (s)</th>
                 <th class="center">Estado</th>
+                <th class="center">Ausente</th>
             </tr>
         </thead>
-        <tbody id="clients"></tbody>
+        <tbody id="clients-table"></tbody>
     </table>
-
-    <script>
-        const socket = io();
-        socket.emit('request_status');
-
-        function formatTimestamp(timestamp) {
-            if (timestamp === 0) return "N/A";
-            const date = new Date(timestamp * 1000);
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
-        }
-
-        socket.on('update_status', function(data) {
-            let row = document.getElementById(`client-${data.id}`);
-            if (!row) {
-                row = document.createElement('tr');
-                row.id = `client-${data.id}`;
-                row.innerHTML = `
-                    <td id="row-${data.id}" class="right"></td>
-                    <td id="id-${data.id}" class="right"></td>
-                    <td id="name-${data.id}" class="left"></td>
-                    <td id="ip-${data.id}" class="right"></td>
-                    <td id="timestamp-${data.id}" class="right"></td>
-                    <td id="elapsed-${data.id}" class="right"></td>
-                    <td id="status-${data.id}" class="center"></td>
-                `;
-                document.getElementById('clients').appendChild(row);
-            }
-
-            // Asignar valores a las celdas
-            document.getElementById(`row-${data.id}`).innerText = data.row;
-            document.getElementById(`id-${data.id}`).innerText = data.id;
-            document.getElementById(`name-${data.id}`).innerText = data.name || "N/A";
-            document.getElementById(`ip-${data.id}`).innerText = data.ip || "N/A";
-            document.getElementById(`timestamp-${data.id}`).innerText = formatTimestamp(data.timestamp);
-            document.getElementById(`elapsed-${data.id}`).innerText = data.timestamp === 0 ? "N/A" : data.elapsed.toFixed(1);
-            document.getElementById(`status-${data.id}`).innerText = data.status || "Desconocido";
-
-            // Aplicar color a toda la fila
-            row.className = data.color;
-        });
-
-        // Actualizar la tabla cada 5 segundos
-        setInterval(() => { socket.emit('request_status'); }, 5000);
-    </script>
+    <script src="{{ url_for('static', filename='index.js') }}" type="text/javascript" defer></script>
+    <h2>Energizado por <a href="https://github.com/nelbren/ICM" target="_blank">ICM v2.5</a> & <a href="https://github.com/nelbren/ICMd" target="_blank">ICMd v1.0</a></h2>
 </body>
 </html>
