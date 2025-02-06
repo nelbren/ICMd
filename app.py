@@ -1,10 +1,10 @@
+# -*- coding: UTF-8 -*-
 # Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-01-31 - v1.0
-from flask import Flask, render_template, request, jsonify
-from flask_socketio import SocketIO
 import time
-from canvas import getStudents
 import socket
-
+from canvas import getStudents
+from flask_socketio import SocketIO
+from flask import Flask, render_template, request, jsonify
 
 DEBUG = 0
 
@@ -32,9 +32,17 @@ def get_status_col_color(condition):
     return "green" if condition == "✔️" else "red"
 
 
+def get_status_emoji(status):
+    if status == "OK":
+        return "✔️"
+    if status == "INTERNET":
+        return "🌐"
+    return "❌"
+
+
 @app.route('/')
 def index():
-    server_ip = get_server_ip()
+    server_ip = get_active_ipv4()
     # print(f"Server IP: {server_ip}")
     return render_template('index.html', server_ip=server_ip)
 
@@ -43,11 +51,16 @@ def index():
 def update():
     timestamp = time.time()
     data = request.json
-    id = data.get("id")
-    if id:
+
+    id = data.get("id", "")
+    if id and id in clients_status:
         row = clients_status[id]["row"]
         name = clients_status[id]["name"]
         status = data.get("status", "N/A")
+        # print(id, status, flush=True)
+        status = get_status_emoji(status)
+        # print(id, status, flush=True)
+        # print(data, flush=True)
         ip = request.remote_addr
         elapsed = time.time() - timestamp
         color, status = get_status_row_color(time.time(), status)
@@ -76,8 +89,14 @@ def update():
                     "status": status,
                     "ip": ip
                 }
+        # print(f"{id} -> {data}", flush=True)
+        # encoded = str.encode(data, 'utf-8')
+        # print(id, encoded, flush=True)
+
         socketio.emit('update_status', data)
         return jsonify({"message": "Updated successfully"}), 200
+    else:
+        print(f"❌🆔{id}❓UNKNOWN")
     return jsonify({"error": "Invalid data"}), 400
 
 
@@ -150,13 +169,43 @@ def update_ignore_status(data):
     # print('update_ignore_status', user_id, ignored)
 
 
-def get_server_ip():
+def get_server_ip():  # MacOS
     hostname = socket.gethostname()
     ip_list = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
     for ip in ip_list:
         if ip[4][0] and not ip[4][0].startswith("127."):
             return ip[4][0]  # Retorna la primera IP no local encontrada
     return "127.0.0.1"  # Si no encuentra otra, retorna localhost
+
+
+def get_server_ipv4():  # Windows: no selecciona el interfaz activo
+    hostname = socket.gethostname()
+    ip_list = socket.getaddrinfo(hostname, None,
+                                 socket.AF_INET, proto=socket.IPPROTO_TCP)
+    for ip in ip_list:
+        ip_address = ip[4][0]
+        print(ip_address)
+        if not ip_address.startswith("127."):  # Excluir localhost
+            return ip_address
+    return "127.0.0.1"  # Si no encuentra otra, retorna localhost
+
+
+def get_active_ipv4():
+    try:
+        # Crear un socket UDP y conectarse a un servidor público (Google DNS)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]  # Obtener la IP de la interfaz activa
+    except Exception as e:
+        print(f"Error obteniendo la IP: {e}")
+        return "127.0.0.1"  # Retorno seguro en caso de fallo
+
+
+@socketio.on('ping_server')
+def handle_ping():
+    """ Responde a los pings del frontend """
+    socketio.emit('pong_client', {'timestamp': time.time()})
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

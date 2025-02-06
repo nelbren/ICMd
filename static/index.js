@@ -1,9 +1,10 @@
 var audioEnabled = false;
 var audioButton = document.getElementById("audio-toggle");
+let lastResponseTime = Date.now();
 
 function enableAudio() {
     if (!audioEnabled) {
-        document.getElementById("alert-sound").play().catch(() => {});
+        document.getElementById("alert-sound").play().catch(() => {})
         audioEnabled = true;
         updateAudioButton();
     }
@@ -57,14 +58,10 @@ socket.on('update_status', function(data) {
         checkbox.type = "checkbox";
         checkbox.checked = getIgnoreStatus(data.id);
         checkbox.onchange = function() {
-            //setIgnoreStatus(data.id, checkbox.checked);
             updateBackgroundColor();
         };
-        // var d = document.getElementById("test");  //   Javascript
         checkbox.className = "ignore-checkbox";
         checkbox.setAttribute('data-user-id' , data.id);
-
-        //console.log('CHECKBOX->', checkbox)
 
 
         ignoreCell.appendChild(checkbox);
@@ -78,8 +75,6 @@ socket.on('update_status', function(data) {
     }
 
     let isIgnored = getIgnoreStatus(data.id);
-    // console.log("--->", data.id, isIgnored);
-    // Aplicar color a toda la fila o ponerla en gris si está ignorado
     row.className = isIgnored ? "gray-row" : data.color;
 
     // Aplicar color al campo de Estado
@@ -93,7 +88,6 @@ socket.on('update_status', function(data) {
             else
                 statusCell.className = "status-yellow";
             if (!isIgnored && audioEnabled) {
-                // console.log("alertSound.play ->", statusCell);
                 alertSound.play().catch(err => console.warn("Error al reproducir sonido:", err));
             }
         }
@@ -111,8 +105,6 @@ function updateBackgroundColor() {
         let isIgnored = row.querySelector("input[type='checkbox']").checked;
         let statusCell = row.cells[6];
 
-        // xalert(cell.className)
-        // console.log("cell.className -> ", cell.className);
         if (isIgnored) {
             row.className = "gray-row"
             statusCell.className  = "gray-row"
@@ -135,14 +127,8 @@ function updateBackgroundColor() {
 }
 
 function getIgnoreStatus(userId) {
-    //return localStorage.getItem("ignore_" + userId) === "true";
     let ignoredUsers = JSON.parse(localStorage.getItem("ignoredUsers")) || {};
-    // console.log("getIgnoreStatus ->", userId, ignoredUsers[userId]);
     return ignoredUsers[userId];
-}
-
-function setIgnoreStatus(userId, status) {
-    //localStorage.setItem("ignore_" + userId, status);
 }
 
 socket.on('update_counters', function(data) {
@@ -172,13 +158,6 @@ document.addEventListener("DOMContentLoaded", function () {
     actualizarCheckboxes();
 });
 
-/*
-socket.on("update_table", function (data) {
-    console.log("update_table");
-    setTimeout(actualizarCheckboxes, 500); // Espera 500ms para asegurarte de que los elementos estén en el DOM
-});
-*/
-
 function actualizarCheckboxes() {
     // console.log("actualizarCheckboxes");
     let ignoredUsers = JSON.parse(localStorage.getItem("ignoredUsers")) || {};
@@ -191,16 +170,36 @@ function actualizarCheckboxes() {
             // console.log("fijando ->", userId, isIgnored);
             checkbox.checked = ignoredUsers[userId];
             // Enviar la actualización al backend
+            // console.log("update_ignore_status", { id: userId, ignored: isIgnored });
             socket.emit("update_ignore_status", { id: userId, ignored: isIgnored });
+        /*
         } else {
             console.warn(`Checkbox para el usuario ${userId} no encontrado.`);
+        */
         }
     }
 }
 
+// Función para actualizar el indicador
+function updateStatus() {
+    const now = Date.now();
+    const elapsed = now - lastResponseTime;
+    const statusElement = document.getElementById("server-status");
+
+    if (elapsed < 5000) {
+        statusElement.innerHTML = "🙂";
+        statusElement.style.backgroundColor = "green";
+    } else {
+        statusElement.innerHTML = "☹️";
+        statusElement.style.backgroundColor = "red";
+    }
+}
+
+// Escuchar respuesta del backend
+socket.on('pong_client', (data) => { lastResponseTime = Date.now(); updateStatus(); });
 socket.emit('request_status');
 
 // Actualizar la tabla cada 5 segundos
 setInterval(() => { socket.emit('request_status'); }, 5000);
-
 setTimeout(actualizarCheckboxes, 500);
+setInterval(() => { socket.emit('ping_server'); updateStatus(); }, 400);

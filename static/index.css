@@ -239,3 +239,14 @@ a {
     color: red; 
     font-weight: bold;
 }
+
+#server-status {
+    font-weight: bold;
+    border-radius: 5px;
+    background-color: white;
+    padding: 10px;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    margin-left: auto;
+}

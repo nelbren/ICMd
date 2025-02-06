@@ -1,4 +1,4 @@
-# canvas - nelbren@nelbren.com @ 2025-01-31 - v1.0
+# canvas - nelbren@nelbren.com @ 2025-02-05 - v1.1
 
 import yaml
 import requests
@@ -6,14 +6,19 @@ import requests
 
 def getConfig():
     config = None
-    with open("config.yml", "r") as yamlfile:
-        data = yaml.load(yamlfile, Loader=yaml.FullLoader)
-        config = {
-            "INSTRUCTURE_URL": data['INSTRUCTURE_URL'],
-            "API_KEY": data['API_KEY'],
-            "COURSE_ID": data['COURSE_ID'],
-            # "ASSIGNMENT_ID": data['ASSIGNMENT_ID']
-        }
+    try:
+        with open("config.yml", "r") as yamlfile:
+            data = yaml.load(yamlfile, Loader=yaml.FullLoader)
+            config = {
+                "INSTRUCTURE_URL": data['INSTRUCTURE_URL'],
+                "API_KEY": data['API_KEY'],
+                "COURSE_ID": data['COURSE_ID'],
+                # "ASSIGNMENT_ID": data['ASSIGNMENT_ID']
+            }
+    except IOError:
+        print("Please make config.yml! ( ./config.bash )")
+        exit(1)
+
     # print(data)
     return config
 

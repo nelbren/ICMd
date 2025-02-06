@@ -1,4 +1,4 @@
 PyYAML # yaml
-flask
+Flask # flask
 requests
-flask_socketio
+Flask-SocketIO # flask_socketio
