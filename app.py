@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-01-31 - v1.0
+# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-06 - v1.1
 import time
 import socket
 from canvas import getStudents
@@ -90,8 +90,6 @@ def update():
                     "ip": ip
                 }
         # print(f"{id} -> {data}", flush=True)
-        # encoded = str.encode(data, 'utf-8')
-        # print(id, encoded, flush=True)
 
         socketio.emit('update_status', data)
         return jsonify({"message": "Updated successfully"}), 200
@@ -108,8 +106,6 @@ def send_status():
     critical_count = 0
     ignore_count = 0
     active_count = 0
-    # active_count = 0
-    # inactive_count = 0
     # print(clients_status)
     for index, (id, info) in enumerate(clients_status.items(), start=1):
         # print("send_status - info ->", info)
@@ -153,8 +149,6 @@ def send_status():
         "critical": critical_count,
         "ignore": ignore_count,
         "active": active_count
-        # "active": active_count,
-        # "inactive": inactive_count
     })
 
 
@@ -167,27 +161,6 @@ def update_ignore_status(data):
         clients_status[user_id]["ignored"] = ignored
 
     # print('update_ignore_status', user_id, ignored)
-
-
-def get_server_ip():  # MacOS
-    hostname = socket.gethostname()
-    ip_list = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
-    for ip in ip_list:
-        if ip[4][0] and not ip[4][0].startswith("127."):
-            return ip[4][0]  # Retorna la primera IP no local encontrada
-    return "127.0.0.1"  # Si no encuentra otra, retorna localhost
-
-
-def get_server_ipv4():  # Windows: no selecciona el interfaz activo
-    hostname = socket.gethostname()
-    ip_list = socket.getaddrinfo(hostname, None,
-                                 socket.AF_INET, proto=socket.IPPROTO_TCP)
-    for ip in ip_list:
-        ip_address = ip[4][0]
-        print(ip_address)
-        if not ip_address.startswith("127."):  # Excluir localhost
-            return ip_address
-    return "127.0.0.1"  # Si no encuentra otra, retorna localhost
 
 
 def get_active_ipv4():

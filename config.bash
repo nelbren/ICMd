@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# config.bash v1.1 @ 2025-02-05 - nelbren@nelbren.com
+# config.bash v1.2 @ 2025-02-06 - nelbren@nelbren.com
 
 myEcho() {
     tag="$1"
@@ -19,11 +19,11 @@ config_install() {
         myEcho ${nY}'☐'
         printf "\n${Iw}cp config.yml.example config.yml${S}\n"
         cp config.yml.example config.yml
-        if [ ! -r config.yml ]; then
+    fi
+    if [ ! -r config.yml ]; then
             myEcho ${nR}'×'
             printf "\n${nY}Please manually copy config! ( cp config.yml.example config.yml )${S}\n"
             exit 1
-        fi 
     else
         myEcho ${nG}'✓'
         printf "${nW}INSTRUCTURE_URL...${S}"
