@@ -1,8 +1,8 @@
 # 🌐 Internet Connection Monitor daemon (ICMd) 🔌
 
-|Version|
-|--:|
-|`1.1`|
+|Version|Timestamp|OS|
+|--:|--:|:--:|
+|`1.2`|`2025-02-13 16:15`|🍎|
 
 ## **Real-Time Client Monitoring Dashboard**  
 

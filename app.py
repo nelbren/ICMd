@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-06 - v1.1
+# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-13 - v1.2
 import time
 import socket
 from canvas import getStudents
@@ -40,6 +40,16 @@ def get_status_emoji(status):
     return "❌"
 
 
+def get_os_emoji(OS):
+    if OS == "MACOS":
+        return "🍎"
+    elif OS == "LINUX":
+        return "🐧"
+    elif OS == "WINDOWS":
+        return "🪟"
+    return "⁉️"
+
+
 @app.route('/')
 def index():
     server_ip = get_active_ipv4()
@@ -56,6 +66,8 @@ def update():
     if id and id in clients_status:
         row = clients_status[id]["row"]
         name = clients_status[id]["name"]
+        OS = data.get("OS", "N/A")
+        OS = get_os_emoji(OS)
         status = data.get("status", "N/A")
         # print(id, status, flush=True)
         status = get_status_emoji(status)
@@ -68,6 +80,7 @@ def update():
             "row": row,
             "name": name,
             "last_update": time.time(),
+            "OS": OS,
             "status": status,
             "ip": ip,
             "color": color,
@@ -87,7 +100,8 @@ def update():
                     "elapsed": elapsed,
                     "color": color,
                     "status": status,
-                    "ip": ip
+                    "ip": ip,
+                    "OS": OS
                 }
         # print(f"{id} -> {data}", flush=True)
 
@@ -114,6 +128,7 @@ def send_status():
         color, status = get_status_row_color(
             info["last_update"], status)
         ip = info.get("ip", "N/A")
+        OS = info.get("OS", "N/A")
         if DEBUG:
             print(f"🔃➜🌐➜💻{ip}🆔{id}")
         # print("request_status ->", ip)
@@ -139,6 +154,7 @@ def send_status():
                     "color": color,
                     "status": status,
                     "ip": ip,
+                    "OS": OS
                 }
         socketio.emit('update_status', data)
     # Emitir los contadores al frontend

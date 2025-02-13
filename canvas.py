@@ -50,8 +50,8 @@ def getStudents():
                 "color": "yellow",
                 "ignored": False
             }
-            # if row == 2:
-            #    break
+            # if row == 1:
+            #     break
     return students
 
 

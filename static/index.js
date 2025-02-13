@@ -34,6 +34,8 @@ socket.on('update_status', function(data) {
     let elapsedText = "N/A";
     let elapsedSeconds = 0;
 
+    //console.log(data)
+
     if (data.timestamp) {
         let timestamp = new Date(data.timestamp * 1000);
         formattedTime = timestamp.toLocaleTimeString('es-ES', { hour12: false }).padStart(8, '0');
@@ -47,13 +49,14 @@ socket.on('update_status', function(data) {
         row.insertCell(0).textContent = table.rows.length;  // Número de fila
         row.insertCell(1).textContent = data.id;  // ID del usuario
         row.insertCell(2).textContent = data.name || "Desconocido";  // Nombre
-        row.insertCell(3).textContent = data.ip || "N/A";  // IP
-        row.insertCell(4).textContent = formattedTime;  // Última actualización
-        row.insertCell(5).textContent = elapsedText;  // Tiempo transcurrido
-        row.insertCell(6).textContent = data.status || "❌";  // Estado
+        row.insertCell(3).textContent = data.OS || "N/A";  // OS
+        row.insertCell(4).textContent = data.ip || "N/A";  // IP
+        row.insertCell(5).textContent = formattedTime;  // Última actualización
+        row.insertCell(6).textContent = elapsedText;  // Tiempo transcurrido
+        row.insertCell(7).textContent = data.status || "❌";  // Estado
 
         // Celda de Ignorar con checkbox
-        let ignoreCell = row.insertCell(7);
+        let ignoreCell = row.insertCell(8);
         let checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = getIgnoreStatus(data.id);
@@ -63,22 +66,22 @@ socket.on('update_status', function(data) {
         checkbox.className = "ignore-checkbox";
         checkbox.setAttribute('data-user-id' , data.id);
 
-
         ignoreCell.appendChild(checkbox);
     } else {
         row.cells[1].textContent = data.id;
         row.cells[2].textContent = data.name || "Desconocido";
-        row.cells[3].textContent = data.ip || "N/A";
-        row.cells[4].textContent = formattedTime;
-        row.cells[5].textContent = elapsedText;
-        row.cells[6].textContent = data.status || "❌";
+        row.cells[3].textContent = data.OS || "N/A";
+        row.cells[4].textContent = data.ip || "N/A";
+        row.cells[5].textContent = formattedTime;
+        row.cells[6].textContent = elapsedText;
+        row.cells[7].textContent = data.status || "❌";
     }
 
     let isIgnored = getIgnoreStatus(data.id);
     row.className = isIgnored ? "gray-row" : data.color;
 
     // Aplicar color al campo de Estado
-    let statusCell = row.cells[6];
+    let statusCell = row.cells[7];
     if (!isIgnored) {
         if (data.status === "✔️") {
             statusCell.className = "status-green";
@@ -97,17 +100,19 @@ socket.on('update_status', function(data) {
 });
 
 function updateBackgroundColor() {
-    let statusCells = document.querySelectorAll("#clients-table td:nth-child(7)"); 
+    let statusCells = document.querySelectorAll("#clients-table td:nth-child(8)"); 
     let hasRed = false, hasYellow = false;
+    // console.log("statusCells->", statusCells)
 
     statusCells.forEach(cell => {
         let row = cell.parentNode;
         let isIgnored = row.querySelector("input[type='checkbox']").checked;
-        let statusCell = row.cells[6];
+        let statusCell = row.cells[8];
+        console.log("statusCell->", statusCell)
 
         if (isIgnored) {
             row.className = "gray-row"
-            statusCell.className  = "gray-row"
+            //statusCell.className  = "gray-row"
         } else {
             if (cell.className === "status-red") {
                 hasRed = true;
