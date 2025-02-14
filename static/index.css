@@ -63,6 +63,11 @@ td { padding: 10px; }
     color: white;
 }
 
+.status-red2 {
+    background-color: maroon;
+    color: white;
+}
+
 /* Estilo para el encabezado de la tabla */
 thead tr {
     background-color: white; /* Fondo blanco */

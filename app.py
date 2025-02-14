@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-13 - v1.2
+# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-14 - v1.3
 import time
 import socket
 from canvas import getStudents
@@ -18,6 +18,10 @@ clients_status = getStudents()  # {}
 def get_status_row_color(last_update, status):
     elapsed = time.time() - last_update
     # print(elapsed)
+    # print("STATUS ->", status)
+    if status == "🌐":
+        return "red", status
+
     if elapsed < 25:
         return "green", status
     elif elapsed < 40:
@@ -68,6 +72,7 @@ def update():
         name = clients_status[id]["name"]
         OS = data.get("OS", "N/A")
         OS = get_os_emoji(OS)
+        icmVersion = data.get("icmVersion", "N/A")
         status = data.get("status", "N/A")
         # print(id, status, flush=True)
         status = get_status_emoji(status)
@@ -80,6 +85,7 @@ def update():
             "row": row,
             "name": name,
             "last_update": time.time(),
+            "icmVersion": icmVersion,
             "OS": OS,
             "status": status,
             "ip": ip,
@@ -101,6 +107,7 @@ def update():
                     "color": color,
                     "status": status,
                     "ip": ip,
+                    "icmVersion": icmVersion,
                     "OS": OS
                 }
         # print(f"{id} -> {data}", flush=True)
@@ -122,13 +129,14 @@ def send_status():
     active_count = 0
     # print(clients_status)
     for index, (id, info) in enumerate(clients_status.items(), start=1):
-        # print("send_status - info ->", info)
+        # print("send_status - info ->", id, info)
         elapsed = time.time() - info["last_update"]
         status = info.get("status", "N/A")
         color, status = get_status_row_color(
             info["last_update"], status)
         ip = info.get("ip", "N/A")
         OS = info.get("OS", "N/A")
+        icmVersion = info.get("icmVersion", "N/A")
         if DEBUG:
             print(f"🔃➜🌐➜💻{ip}🆔{id}")
         # print("request_status ->", ip)
@@ -137,6 +145,7 @@ def send_status():
         if ignored:
             ignore_count += 1
         else:
+            # print(id, "COLOR ->", color)
             active_count += 1
             if color == "green":
                 ok_count += 1
@@ -154,7 +163,8 @@ def send_status():
                     "color": color,
                     "status": status,
                     "ip": ip,
-                    "OS": OS
+                    "OS": OS,
+                    "icmVersion": icmVersion
                 }
         socketio.emit('update_status', data)
     # Emitir los contadores al frontend
