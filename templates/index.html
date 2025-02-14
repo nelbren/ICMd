@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌐 Internet Connection Monitor (ICMd) 🔌 v1.0</title>
+    <title>🌐 Internet Connection Monitor (ICMd) 🔌 v{{ MY_VERSION }}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
 </head>
@@ -64,6 +64,13 @@
         <tbody id="clients-table"></tbody>
     </table>
     <script src="{{ url_for('static', filename='index.js') }}" type="text/javascript" defer></script>
-    <h2>Energizado por <a href="https://github.com/nelbren/ICM" target="_blank">ICM v3.0</a> & <a href="https://github.com/nelbren/ICMd" target="_blank">ICMd v1.3</a></h2>
+    <div class="header-container">
+        <div class="icmd-os">
+            {{ osEmoji }}
+        </div>
+        <h2>
+            Energizado por <a href="https://github.com/nelbren/ICM" target="_blank">ICM v3.0</a> & <a href="https://github.com/nelbren/ICMd" target="_blank">ICMd v{{ MY_VERSION }}</a>
+        </h2>
+    </div>
 </body>
 </html>

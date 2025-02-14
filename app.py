@@ -1,11 +1,14 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-14 - v1.3
+# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-14
+import os
 import time
 import socket
+import platform
 from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
+MY_VERSION = 1.4
 DEBUG = 0
 
 app = Flask(__name__)
@@ -51,14 +54,31 @@ def get_os_emoji(OS):
         return "🐧"
     elif OS == "WINDOWS":
         return "🪟"
+    elif OS == "RASPBERRY":
+        return "🍓"
     return "⁉️"
+
+
+def getOSM():
+    OS = platform.system()
+    if OS == "Linux":
+        fileModel = '/proc/device-tree/model'
+        if os.path.exists(fileModel):
+            with open(fileModel) as f:
+                model = f.read()
+            if 'Raspberry' in model:
+                OS = 'Raspberry'
+    return OS.upper()
 
 
 @app.route('/')
 def index():
     server_ip = get_active_ipv4()
     # print(f"Server IP: {server_ip}")
-    return render_template('index.html', server_ip=server_ip)
+    OS = getOSM()
+    osEmoji = get_os_emoji(OS)
+    return render_template('index.html', server_ip=server_ip,
+                           osEmoji=osEmoji, MY_VERSION=MY_VERSION)
 
 
 @app.route('/update', methods=['POST'])

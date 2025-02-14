@@ -109,26 +109,28 @@ socket.on('update_status', function(data) {
 function updateBackgroundColor() {
     let statusCells = document.querySelectorAll("#clients-table td:nth-child(8)"); 
     let hasRed = false, hasYellow = false;
-    // console.log("statusCells->", statusCells)
+    //console.log("statusCells->", statusCells)
 
     statusCells.forEach(cell => {
         let row = cell.parentNode;
         let isIgnored = row.querySelector("input[type='checkbox']").checked;
+        //console.log('row->', row)
         let statusCell = row.cells[8];
-        // console.log("statusCell->", statusCell)
+        console.log("statusCell->", statusCell. isIgnored)
 
         if (isIgnored) {
             row.className = "gray-row"
             //statusCell.className  = "gray-row"
         } else {
-            if (cell.className === "status-red2") {
+            if (statusCell.className === "status-red2") {
                 hasRed = true;
-            } else if (cell.className === "status-yellow") { 
+            } else if (statusCell.className === "status-yellow") { 
                 hasYellow = true;
             }
         }
     });
 
+    console.log('hasRed->', hasRed, 'hasYellow->', hasYellow)
     if (hasRed) {
         document.body.style.backgroundColor = "pink";
     } else if (hasYellow) {

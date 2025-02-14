@@ -1,5 +1,7 @@
-# canvas - nelbren@nelbren.com @ 2025-02-05 - v1.1
+# canvas - nelbren@nelbren.com @ 2025-02-14 - v1.2
 
+import os
+import json
 import yaml
 import requests
 
@@ -23,7 +25,7 @@ def getConfig():
     return config
 
 
-def getStudents():
+def getStudents_from_canvas():
     config = getConfig()
     base_url = config['INSTRUCTURE_URL']
     base_url += "/api/v1"
@@ -52,6 +54,28 @@ def getStudents():
             }
             # if row == 1:
             #     break
+    return students
+
+
+def createCSV(students):
+    with open('students.json', 'w') as outfile:
+        json.dump(students, outfile)
+
+
+def getStudents_from_json():
+    students = {}
+    with open('students.json', 'r') as openfile:
+        students = json.load(openfile)
+    return students
+
+
+def getStudents():
+    if not os.path.exists("students.json"):
+        print("Getting students from Canvas...")
+        students = getStudents_from_canvas()
+        createCSV(students)
+    print("Getting students from students.json...")
+    students = getStudents_from_json()
     return students
 
 
