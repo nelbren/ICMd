@@ -8,7 +8,8 @@ from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 1.4
+MY_VERSION = 1.5
+ICM_VERSION = 4.4
 DEBUG = 0
 
 app = Flask(__name__)
@@ -77,8 +78,8 @@ def index():
     # print(f"Server IP: {server_ip}")
     OS = getOSM()
     osEmoji = get_os_emoji(OS)
-    return render_template('index.html', server_ip=server_ip,
-                           osEmoji=osEmoji, MY_VERSION=MY_VERSION)
+    return render_template('index.html', server_ip=server_ip, osEmoji=osEmoji,
+                           MY_VERSION=MY_VERSION, ICM_VERSION=ICM_VERSION)
 
 
 @app.route('/update', methods=['POST'])
