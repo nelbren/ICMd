@@ -4,12 +4,13 @@ import os
 import time
 import socket
 import platform
+from datetime import datetime, date
 from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 1.5
-ICM_VERSION = 4.4
+MY_VERSION = 1.6
+ICM_VERSION = 4.6
 DEBUG = 0
 
 app = Flask(__name__)
@@ -17,6 +18,14 @@ socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
 
 # Diccionario para almacenar el estado de los clientes
 clients_status = getStudents()  # {}
+
+
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
 def get_status_row_color(last_update, status):
@@ -49,7 +58,7 @@ def get_status_emoji(status):
 
 
 def get_os_emoji(OS):
-    if OS == "MACOS":
+    if OS in ["MACOS", "DARWIN"]:
         return "🍎"
     elif OS == "LINUX":
         return "🐧"
@@ -57,6 +66,7 @@ def get_os_emoji(OS):
         return "🪟"
     elif OS == "RASPBERRY":
         return "🍓"
+    print("OS ->", OS)
     return "⁉️"
 
 
@@ -132,12 +142,63 @@ def update():
                     "OS": OS
                 }
         # print(f"{id} -> {data}", flush=True)
-
+        # print('update->', data)
         socketio.emit('update_status', data)
         return jsonify({"message": "Updated successfully"}), 200
     else:
         print(f"❌🆔{id}❓UNKNOWN")
     return jsonify({"error": "Invalid data"}), 400
+
+
+def get_details(uploadDst):
+    stat = os.stat(uploadDst)
+    f1 = time.ctime(stat.st_mtime)
+    f2 = datetime.strptime(f1, "%a %b %d %H:%M:%S %Y") \
+                 .strftime("%Y-%m-%d %H:%M:%S")
+    sizeStr = sizeof_fmt(stat.st_size)
+    return f2, sizeStr
+
+
+def update_uploads():
+    currentDate = date.today()
+    uploadDir = f'ICM/{currentDate}'
+    if os.path.exists(uploadDir):
+        for filename in os.listdir(uploadDir):
+            # print(filename)
+            id = filename.split('_')[0]
+            uploadDst = f'{uploadDir}/{filename}'
+            f2, sizeStr = get_details(uploadDst)
+            client_status = clients_status[id]
+            client_status['icmTGZ'] = f'{sizeStr}📦'
+            clients_status[id] = client_status
+
+
+@app.route('/upload/<id>', methods=['GET', 'POST'])
+def upload(id):
+    if request.method == 'POST':
+        if id in clients_status:
+            currentDate = date.today()
+            name = clients_status[id]["name"]
+            name = name.replace(' ', '_')
+            uploadDir = f'ICM/{currentDate}'
+            if not os.path.exists(uploadDir):
+                os.makedirs(uploadDir)
+            uploadName = f'{id}_{name}_ICM.tgz'
+            uploadDst = f'{uploadDir}/{uploadName}'
+            file = request.files['filedata']
+            # print(timestamp, file)
+            file.save(uploadDst)
+            f2, sizeStr = get_details(uploadDst)
+            detail = f2 + ' | ' + sizeStr
+            client_status = clients_status[id]
+            client_status['icmTGZ'] = f'{sizeStr}📦'
+            client_status['id'] = id
+            clients_status[id] = client_status
+            # print('upload->', client_status)
+            socketio.emit('update_status', client_status)
+            return f'¡📦 {uploadName} ({detail}) ✅ Upload successful 😎!'
+        else:
+            return f'🚫 Nice try {id} 🙃!'
 
 
 @socketio.on('request_status')
@@ -158,6 +219,7 @@ def send_status():
         ip = info.get("ip", "N/A")
         OS = info.get("OS", "N/A")
         icmVersion = info.get("icmVersion", "N/A")
+        icmTGZ = info.get("icmTGZ", "N/A")
         if DEBUG:
             print(f"🔃➜🌐➜💻{ip}🆔{id}")
         # print("request_status ->", ip)
@@ -185,7 +247,8 @@ def send_status():
                     "status": status,
                     "ip": ip,
                     "OS": OS,
-                    "icmVersion": icmVersion
+                    "icmVersion": icmVersion,
+                    "icmTGZ": icmTGZ
                 }
         socketio.emit('update_status', data)
     # Emitir los contadores al frontend
@@ -226,6 +289,13 @@ def handle_ping():
     """ Responde a los pings del frontend """
     socketio.emit('pong_client', {'timestamp': time.time()})
 
+
+OS = getOSM()
+osEmoji = get_os_emoji(OS)
+currentDate = date.today()
+print(f'\n⚡️ Energizado por 🌐 ICMd v{MY_VERSION}'
+      f' 🔌 ejecutandose en {osEmoji} el {currentDate}\n')
+update_uploads()
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

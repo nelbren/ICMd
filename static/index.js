@@ -51,13 +51,14 @@ socket.on('update_status', function(data) {
         row.insertCell(2).textContent = data.name || "Desconocido";  // Nombre
         row.insertCell(3).textContent = data.OS || "N/A";  // OS
         row.insertCell(4).textContent = data.icmVersion || "N/A";
-        row.insertCell(5).textContent = data.ip || "N/A";  // IP
-        row.insertCell(6).textContent = formattedTime;  // Última actualización
-        row.insertCell(7).textContent = elapsedText;  // Tiempo transcurrido
-        row.insertCell(8).textContent = data.status || "❌";  // Estado
+        row.insertCell(5).textContent = data.icmTGZ || "N/AAAA";
+        row.insertCell(6).textContent = data.ip || "N/A";  // IP
+        row.insertCell(7).textContent = formattedTime;  // Última actualización
+        row.insertCell(8).textContent = elapsedText;  // Tiempo transcurrido
+        row.insertCell(9).textContent = data.status || "❌";  // Estado
 
         // Celda de Ignorar con checkbox
-        let ignoreCell = row.insertCell(9);
+        let ignoreCell = row.insertCell(10);
         let checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = getIgnoreStatus(data.id);
@@ -73,16 +74,18 @@ socket.on('update_status', function(data) {
         row.cells[2].textContent = data.name || "Desconocido";
         row.cells[3].textContent = data.OS || "N/A";
         row.cells[4].textContent = data.icmVersion || "N/A";
-        row.cells[5].textContent = data.ip || "N/A";
-        row.cells[6].textContent = formattedTime;
-        row.cells[7].textContent = elapsedText;
-        row.cells[8].textContent = data.status || "❌";
+        row.cells[5].textContent = data.icmTGZ || "N/A";
+        row.cells[6].textContent = data.ip || "N/A";
+        row.cells[7].textContent = formattedTime;
+        row.cells[8].textContent = elapsedText;
+        row.cells[9].textContent = data.status || "❌";
     }
 
     let isIgnored = getIgnoreStatus(data.id);
 
     // Aplicar color al campo de Estado
-    let statusCell = row.cells[8];
+    let statusCell = row.cells[9];
+    //console.log('statusCell =>', data.status, statusCell)
     if (!isIgnored) {
         if (data.status === "✔️") {
             statusCell.className = "status-green";
@@ -107,7 +110,7 @@ socket.on('update_status', function(data) {
 });
 
 function updateBackgroundColor() {
-    let statusCells = document.querySelectorAll("#clients-table td:nth-child(8)"); 
+    let statusCells = document.querySelectorAll("#clients-table td:nth-child(10)"); 
     let hasRed = false, hasYellow = false;
     //console.log("statusCells->", statusCells)
 
@@ -115,9 +118,9 @@ function updateBackgroundColor() {
         let row = cell.parentNode;
         let isIgnored = row.querySelector("input[type='checkbox']").checked;
         //console.log('row->', row)
-        let statusCell = row.cells[8];
-        console.log("statusCell->", statusCell. isIgnored)
-
+        let statusCell = row.cells[9];
+        //console.log("statusCell->", statusCell, statusCell.className, isIgnored)
+        //console.log("statusCell->", statusCell.className, isIgnored)
         if (isIgnored) {
             row.className = "gray-row"
             //statusCell.className  = "gray-row"
@@ -130,7 +133,7 @@ function updateBackgroundColor() {
         }
     });
 
-    console.log('hasRed->', hasRed, 'hasYellow->', hasYellow)
+    //console.log('hasRed->', hasRed, 'hasYellow->', hasYellow)
     if (hasRed) {
         document.body.style.backgroundColor = "pink";
     } else if (hasYellow) {
@@ -154,8 +157,8 @@ socket.on('update_counters', function(data) {
 });
 
 document.addEventListener("change", function (event) {
-    // console.log("CHANGE");
     if (event.target.classList.contains("ignore-checkbox")) {
+        //console.log("CHANGE");
         let userId = event.target.dataset.userId;
         let isIgnored = event.target.checked;
 
@@ -210,6 +213,26 @@ function updateStatus() {
         statusElement.style.backgroundColor = "red";
     }
 }
+
+document.getElementById("toggleOn").addEventListener("click", function() {
+    document.querySelectorAll(".ignore-checkbox").forEach(checkbox => {
+        checkbox.checked = true;
+        // Pequeña espera para asegurar la propagación del evento
+        setTimeout(() => {
+            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        }, 0);
+    });
+});
+
+document.getElementById("toggleOff").addEventListener("click", function() {
+    document.querySelectorAll(".ignore-checkbox").forEach(checkbox => {
+        checkbox.checked = false;
+        // Pequeña espera para asegurar la propagación del evento        
+        setTimeout(() => {
+            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        }, 0);
+    });
+});
 
 // Escuchar respuesta del backend
 socket.on('pong_client', (data) => { lastResponseTime = Date.now(); updateStatus(); });

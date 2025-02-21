@@ -59,7 +59,7 @@ def getStudents_from_canvas():
 
 def createCSV(students):
     with open('students.json', 'w') as outfile:
-        json.dump(students, outfile)
+        json.dump(students, outfile, indent=4)
 
 
 def getStudents_from_json():

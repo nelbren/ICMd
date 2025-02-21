@@ -104,18 +104,19 @@ td:nth-child(3) {  /* La tercera columna es 'Nombre' */
 }
 
 /* Alinear la IP, Actualización y Tiempo transcurrido a la derecha */
-td:nth-child(5),  /* IP (4ta columna) */
-td:nth-child(6),  /* Actualización (5ta columna) */
-td:nth-child(7), /* Tiempo transcurrido (6ta columna) */
-td:nth-child(8) { /* Tiempo transcurrido (6ta columna) */
+td:nth-child(5),  /* ICM.tgz */
+td:nth-child(6),  /* IP (4ta columna) */
+td:nth-child(7),  /* Actualización (5ta columna) */
+td:nth-child(8), /* Tiempo transcurrido (6ta columna) */
+td:nth-child(9) { /* Tiempo transcurrido (6ta columna) */
     text-align: right;
 
 }
 
 /* Centrar Estado y Ausente (Checkbox) */
 td:nth-child(4),  /* OS (4ta columna) */
-td:nth-child(9),  /* Estado (7ma columna) */
-td:nth-child(10) { /* Ausente (8va columna) */
+td:nth-child(10),  /* Estado (7ma columna) */
+td:nth-child(11) { /* Ausente (8va columna) */
     text-align: center;
 }
 
@@ -245,16 +246,15 @@ h2 {
 .icmd-os {
     display: flex;
     justify-content: center;
-    align-items: right;
-    font-size: 30px;
+    align-items: center;
+    font-size: 20px;
     font-weight: bold;
-    text-align: right;
+    text-align: center;
     color: white;
-    background-color: white;
-    border-radius: 5px;
-    background-color: white;
-    padding: 5px;
+    background-color: black;
+    padding: 10px;
     font-family: "Lucida Console", "Courier New", monospace;
+    margin-bottom: auto;
 }
 
 a { 
@@ -271,4 +271,26 @@ a {
     font-size: 28px;
     cursor: pointer;
     margin-left: auto;
+}
+
+#toggleOn {
+    cursor: pointer;
+    cursor: pointer;
+    background-color: gray;;
+    color: black;
+    padding: 5px;
+    border-radius: 5px;
+    border: 2px solid black;
+    font-size: 14px;
+}
+
+#toggleOff {
+    cursor: pointer;
+    background-color: LightCoral;
+    color: black;
+    padding: 5px;
+    /*padding: 5px;*/
+    border-radius: 5px;
+    border: 2px solid black;
+    font-size: 14px;
 }

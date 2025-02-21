@@ -54,11 +54,12 @@
                 <th class="left">Nombre</th>
                 <th class="center">OS</th>
                 <th class="right">ICM Ver</th>
+                <th class="center">ICM.tgz</th>
                 <th class="right">IP</th>
                 <th class="right">Actualización</th>
                 <th class="right">Tiempo Transcurrido (s)</th>
                 <th class="center">Estado</th>
-                <th class="center">Inactivo</th>
+                <th class="center"><span id="toggleOff">❌</span> Inactivo <span id="toggleOn">❎</span> </th>
             </tr>
         </thead>
         <tbody id="clients-table"></tbody>
@@ -66,11 +67,9 @@
     <script src="{{ url_for('static', filename='index.js') }}" type="text/javascript" defer></script>
     <div class="header-container">
         <div class="icmd-os">
-            {{ osEmoji }}
+                ⚡️ Energizado por 🌐 <a href="https://github.com/nelbren/ICM" target="_blank">ICM v{{ ICM_VERSION }}</a> & <a href="https://github.com/nelbren/ICMd" target="_blank">ICMd v{{ MY_VERSION }}</a>
+                🔌 ejecutandose en {{ osEmoji }}
         </div>
-        <h2>
-            Energizado por <a href="https://github.com/nelbren/ICM" target="_blank">ICM v{{ ICM_VERSION }}</a> & <a href="https://github.com/nelbren/ICMd" target="_blank">ICMd v{{ MY_VERSION }}</a>
-        </h2>
     </div>
 </body>
 </html>
