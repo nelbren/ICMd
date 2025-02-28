@@ -1,23 +1,42 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-14
+# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-28
 import os
+import re
 import time
 import socket
+import requests
 import platform
 from datetime import datetime, date
 from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 1.6
-ICM_VERSION = 4.6
+MY_VERSION = 1.7
+ICM_VERSION = 4.7
 DEBUG = 0
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
 
-# Diccionario para almacenar el estado de los clientes
-clients_status = getStudents()  # {}
+
+def checkUpdate():
+    url = 'https://raw.githubusercontent.com/nelbren/ICMd/refs/heads/main/app.py'
+    response = requests.get(url)
+    if response.status_code == 200:
+        content = response.text
+        match = re.search(r"MY_VERSION\s*=\s*(\d+\.\d+)", content)
+        if match:
+            version = match.group(1)
+            if version != MY_VERSION:
+                print(f"💻 ICMd v{MY_VERSION} != 🌐 ICMd v{version}"
+                      " -> Please update, with: git pull")
+                exit(1)
+        else:
+            print("No se encontró la versión.")
+            exit(2)
+    else:
+        print(f"Error al acceder a la página: {response.status_code}")
+        exit(3)
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -104,6 +123,8 @@ def update():
         OS = data.get("OS", "N/A")
         OS = get_os_emoji(OS)
         icmVersion = data.get("icmVersion", "N/A")
+        icmTGZ = update_upload(id, name)
+        # print('icmTGZ ->', icmTGZ)
         status = data.get("status", "N/A")
         # print(id, status, flush=True)
         status = get_status_emoji(status)
@@ -117,6 +138,7 @@ def update():
             "name": name,
             "last_update": time.time(),
             "icmVersion": icmVersion,
+            "icmTGZ": icmTGZ,
             "OS": OS,
             "status": status,
             "ip": ip,
@@ -139,6 +161,7 @@ def update():
                     "status": status,
                     "ip": ip,
                     "icmVersion": icmVersion,
+                    "icmTGZ": icmTGZ,
                     "OS": OS
                 }
         # print(f"{id} -> {data}", flush=True)
@@ -159,18 +182,33 @@ def get_details(uploadDst):
     return f2, sizeStr
 
 
+def update_upload(id, name):
+    currentDate = date.today()
+    uploadDir = f'ICM/{currentDate}'
+    name = name.replace(' ', '_')
+    filename = f'{id}_{name}_ICM.tgz'
+    uploadDst = f'{uploadDir}/{filename}'
+    if os.path.exists(uploadDst):
+        f2, sizeStr = get_details(uploadDst)
+        # print('🆔', id, '🗃️', sizeStr)
+        return f'{sizeStr}📦'
+    return "N/A"
+
+
 def update_uploads():
     currentDate = date.today()
     uploadDir = f'ICM/{currentDate}'
     if os.path.exists(uploadDir):
+        print('📦 Uploads:')
         for filename in os.listdir(uploadDir):
-            # print(filename)
             id = filename.split('_')[0]
             uploadDst = f'{uploadDir}/{filename}'
             f2, sizeStr = get_details(uploadDst)
             client_status = clients_status[id]
             client_status['icmTGZ'] = f'{sizeStr}📦'
             clients_status[id] = client_status
+            print('🆔', id, '🗃️', client_status['icmTGZ'])
+        print()
 
 
 @app.route('/upload/<id>', methods=['GET', 'POST'])
@@ -290,9 +328,11 @@ def handle_ping():
     socketio.emit('pong_client', {'timestamp': time.time()})
 
 
+checkUpdate()
 OS = getOSM()
 osEmoji = get_os_emoji(OS)
 currentDate = date.today()
+clients_status = getStudents()
 print(f'\n⚡️ Energizado por 🌐 ICMd v{MY_VERSION}'
       f' 🔌 ejecutandose en {osEmoji} el {currentDate}\n')
 update_uploads()
