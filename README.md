@@ -2,7 +2,7 @@
 
 |Version|Timestamp|Updated on OS|Supported on OS|
 |--:|--:|:--:|:--:|
-|`1.5`|`2025-02-20 05:23`|🪟|🍎🪟|
+|`1.8`|`2025-02-28 00:45`|🪟|🍎🪟|
 
 ## **Real-Time Client Monitoring Dashboard**  
 

@@ -11,7 +11,7 @@ from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 1.7
+MY_VERSION = 1.8
 ICM_VERSION = 4.7
 DEBUG = 0
 
@@ -20,13 +20,15 @@ socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
 
 
 def checkUpdate():
-    url = 'https://raw.githubusercontent.com/nelbren/ICMd/refs/heads/main/app.py'
+    url = 'https://raw.githubusercontent.com/nelbren'
+    url += '/ICMd/refs/heads/main/app.py'
     response = requests.get(url)
     if response.status_code == 200:
         content = response.text
         match = re.search(r"MY_VERSION\s*=\s*(\d+\.\d+)", content)
         if match:
             version = match.group(1)
+            version = float(version)
             if version != MY_VERSION:
                 print(f"💻 ICMd v{MY_VERSION} != 🌐 ICMd v{version}"
                       " -> Please update, with: git pull")
