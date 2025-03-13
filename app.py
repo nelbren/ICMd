@@ -1,19 +1,22 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon- nelbren@nelbren.com @ 2025-02-28
+# Internet Connection Monitor daemon - nelbren@nelbren.com @ 2025-03-13
 import os
 import re
 import time
 import socket
 import requests
 import platform
+import subprocess
 from datetime import datetime, date
 from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 1.8
+MY_VERSION = 1.9
 ICM_VERSION = 4.7
 DEBUG = 0
+lastAlarm = 0
+secsAlarmMax = 60
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
@@ -49,11 +52,12 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
-def get_status_row_color(last_update, status):
+def get_status_row_color(row, last_update, status):
     elapsed = time.time() - last_update
     # print(elapsed)
     # print("STATUS ->", status)
     if status == "🌐":
+        playSoundWithInternet(row)
         return "red", status
 
     if elapsed < 25:
@@ -134,7 +138,7 @@ def update():
         # print(data, flush=True)
         ip = request.remote_addr
         elapsed = time.time() - timestamp
-        color, status = get_status_row_color(time.time(), status)
+        color, status = get_status_row_color(row, time.time(), status)
         client_status = {
             "row": row,
             "name": name,
@@ -213,6 +217,37 @@ def update_uploads():
         print()
 
 
+def playSound(phrase):
+    global lastAlarm
+    nowAlarm = time.time()
+    secsAlarm = nowAlarm - lastAlarm
+    if secsAlarm <= secsAlarmMax:
+        if DEBUG:
+            print('Ignorar alarma! ', secsAlarm, '<=', secsAlarmMax)
+        return
+    lastAlarm = nowAlarm
+    listCmd = ['say', f'{phrase}']
+    if OS == "WINDOWS":
+        cmd = '~/ICM/.bin/nircmdc.exe'
+        listCmd = [cmd, 'speak text', f'{phrase}']
+    subprocess.run(listCmd)
+
+
+def playSoundAtEnd(number):
+    global lastAlarm
+    lastAlarm = 0
+    phrase = 'Fenomenal. Tengo una noticia buena. '
+    phrase += f'La buena es que el jugador numero {number} ha finalizado. '
+    playSound(phrase)
+
+
+def playSoundWithInternet(number):
+    phrase = 'Terrible. Tengo una noticia mala y una buena. '
+    phrase += f'La buena es que he identificado al jugador numero {number}. '
+    phrase += 'La mala es que cuenta con una conexión a internet.'
+    playSound(phrase)
+
+
 @app.route('/upload/<id>', methods=['GET', 'POST'])
 def upload(id):
     if request.method == 'POST':
@@ -233,9 +268,12 @@ def upload(id):
             client_status = clients_status[id]
             client_status['icmTGZ'] = f'{sizeStr}📦'
             client_status['id'] = id
+            client_status['ignored'] = True
             clients_status[id] = client_status
-            # print('upload->', client_status)
+            print('upload->', client_status)
             socketio.emit('update_status', client_status)
+            number = client_status['row']
+            playSoundAtEnd(number)
             return f'¡📦 {uploadName} ({detail}) ✅ Upload successful 😎!'
         else:
             return f'🚫 Nice try {id} 🙃!'
@@ -255,7 +293,7 @@ def send_status():
         elapsed = time.time() - info["last_update"]
         status = info.get("status", "N/A")
         color, status = get_status_row_color(
-            info["last_update"], status)
+            info['row'], info["last_update"], status)
         ip = info.get("ip", "N/A")
         OS = info.get("OS", "N/A")
         icmVersion = info.get("icmVersion", "N/A")

@@ -33,8 +33,8 @@ socket.on('update_status', function(data) {
     let formattedTime = "N/A";
     let elapsedText = "N/A";
     let elapsedSeconds = 0;
-
-    //console.log(data)
+    if (data.id == '12351121')
+        console.log('update_status', data)
 
     if (data.timestamp) {
         let timestamp = new Date(data.timestamp * 1000);
@@ -83,6 +83,15 @@ socket.on('update_status', function(data) {
 
     let isIgnored = getIgnoreStatus(data.id);
 
+    if (data.ignored) {
+        userId = data.id;
+        isIgnored = true;
+        putIgnoreStatus(userId, isIgnored);
+        socket.emit("update_ignore_status", { id: userId, ignored: isIgnored });
+    }
+    //if (data.id == '12351121')
+    //    console.log('isIgnored', isIgnored)
+    
     // Aplicar color al campo de Estado
     let statusCell = row.cells[9];
     //console.log('statusCell =>', data.status, statusCell)
@@ -146,6 +155,12 @@ function updateBackgroundColor() {
 function getIgnoreStatus(userId) {
     let ignoredUsers = JSON.parse(localStorage.getItem("ignoredUsers")) || {};
     return ignoredUsers[userId];
+}
+
+function putIgnoreStatus(userId, isIgnored) {
+    let ignoredUsers = JSON.parse(localStorage.getItem("ignoredUsers")) || {};
+    ignoredUsers[userId] = isIgnored;
+    localStorage.setItem("ignoredUsers", JSON.stringify(ignoredUsers));
 }
 
 socket.on('update_counters', function(data) {
