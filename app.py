@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon - nelbren@nelbren.com @ 2025-03-13
+# Internet Connection Monitor daemon - nelbren@nelbren.com @ 2025-03-14
 import os
 import re
 import time
@@ -12,14 +12,24 @@ from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 1.9
-ICM_VERSION = 4.7
+MY_VERSION = 2.0
+ICM_VERSION = 4.8
 DEBUG = 0
 lastAlarm = 0
 secsAlarmMax = 60
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
+
+
+def checkICM():
+    cmd = '~/ICM/.bin/nircmdc.exe'
+    if OS == 'WINDOWS':
+        cmd = r'..\ICM\.bin\nircmdc.exe'
+    if not os.path.exists(cmd):
+        print("Por favor ejecute los siguientes comandos:\n")
+        print("  cd\n  git clone https://github.com/nelbren/ICM.git")
+        exit(4)
 
 
 def checkUpdate():
@@ -52,12 +62,13 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
-def get_status_row_color(row, last_update, status):
+def get_status_row_color(row, last_update, status, ignored):
     elapsed = time.time() - last_update
     # print(elapsed)
     # print("STATUS ->", status)
     if status == "🌐":
-        playSoundWithInternet(row)
+        if not ignored:
+            playSoundWithInternet(row)
         return "red", status
 
     if elapsed < 25:
@@ -126,6 +137,7 @@ def update():
     if id and id in clients_status:
         row = clients_status[id]["row"]
         name = clients_status[id]["name"]
+        ignored = clients_status[id]["ignored"]
         OS = data.get("OS", "N/A")
         OS = get_os_emoji(OS)
         icmVersion = data.get("icmVersion", "N/A")
@@ -138,7 +150,7 @@ def update():
         # print(data, flush=True)
         ip = request.remote_addr
         elapsed = time.time() - timestamp
-        color, status = get_status_row_color(row, time.time(), status)
+        color, status = get_status_row_color(row, time.time(), status, ignored)
         client_status = {
             "row": row,
             "name": name,
@@ -149,7 +161,8 @@ def update():
             "status": status,
             "ip": ip,
             "color": color,
-            "ignored": False
+            # "ignored": False
+            "ignored": ignored
         }
         ip_server = "127.0.0.1"
         if DEBUG:
@@ -226,25 +239,37 @@ def playSound(phrase):
             print('Ignorar alarma! ', secsAlarm, '<=', secsAlarmMax)
         return
     lastAlarm = nowAlarm
-    listCmd = ['say', f'{phrase}']
     if OS == "WINDOWS":
-        cmd = '~/ICM/.bin/nircmdc.exe'
-        listCmd = [cmd, 'speak text', f'{phrase}']
-    subprocess.run(listCmd)
+        cmd = r'..\ICM\.bin\nircmdc.exe'
+        os.system(cmd + f' speak text "{phrase}"')
+    else:
+        listCmd = ['say', f'{phrase}']
+        subprocess.run(listCmd)
 
 
 def playSoundAtEnd(number):
     global lastAlarm
     lastAlarm = 0
-    phrase = 'Fenomenal. Tengo una noticia buena. '
-    phrase += f'La buena es que el jugador numero {number} ha finalizado. '
+    if OS == "WINDOWS":
+        phrase = 'Great. I have some good news. '
+        phrase += f'The good news is that player number {number} has finished.'
+    else:
+        phrase = 'Fenomenal. Tengo una noticia buena. '
+        phrase += f'La buena es que el jugador numero {number} ha finalizado. '
     playSound(phrase)
 
 
 def playSoundWithInternet(number):
-    phrase = 'Terrible. Tengo una noticia mala y una buena. '
-    phrase += f'La buena es que he identificado al jugador numero {number}. '
-    phrase += 'La mala es que cuenta con una conexión a internet.'
+    if OS == "WINDOWS":
+        phrase = 'Terrible. I have bad news and good news. '
+        phrase += "The good news is that I've identified "
+        phrase += f'player number {number}.'
+        phrase += 'The bad news is that he has an internet connection.'
+    else:
+        phrase = 'Terrible. Tengo una noticia mala y una buena. '
+        phrase += 'La buena es que he identificado'
+        phrase += f'al jugador numero {number}. '
+        phrase += 'La mala es que cuenta con una conexión a internet.'
     playSound(phrase)
 
 
@@ -292,8 +317,9 @@ def send_status():
         # print("send_status - info ->", id, info)
         elapsed = time.time() - info["last_update"]
         status = info.get("status", "N/A")
+        ignored = info.get("ignored", False)
         color, status = get_status_row_color(
-            info['row'], info["last_update"], status)
+            info['row'], info["last_update"], status, ignored)
         ip = info.get("ip", "N/A")
         OS = info.get("OS", "N/A")
         icmVersion = info.get("icmVersion", "N/A")
@@ -302,7 +328,6 @@ def send_status():
             print(f"🔃➜🌐➜💻{ip}🆔{id}")
         # print("request_status ->", ip)
         # print(id, info)
-        ignored = info.get("ignored", False)
         if ignored:
             ignore_count += 1
         else:
@@ -368,8 +393,9 @@ def handle_ping():
     socketio.emit('pong_client', {'timestamp': time.time()})
 
 
-checkUpdate()
 OS = getOSM()
+checkICM()
+checkUpdate()
 osEmoji = get_os_emoji(OS)
 currentDate = date.today()
 clients_status = getStudents()
