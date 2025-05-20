@@ -1,9 +1,10 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon - nelbren@nelbren.com @ 2025-03-14
+# Internet Connection Monitor daemon - nelbren@nelbren.com @ 2025-05-20
 import os
 import re
 import time
 import socket
+import locale
 import requests
 import platform
 import subprocess
@@ -12,8 +13,8 @@ from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 2.0
-ICM_VERSION = 4.8
+MY_VERSION = 2.1
+ICM_VERSION = 4.9
 DEBUG = 0
 lastAlarm = 0
 secsAlarmMax = 60
@@ -23,12 +24,13 @@ socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
 
 
 def checkICM():
-    cmd = '~/ICM/.bin/nircmdc.exe'
-    if OS == 'WINDOWS':
-        cmd = r'..\ICM\.bin\nircmdc.exe'
+    homeDir = os.path.expanduser("~")
+    cmd = os.path.join(homeDir, 'ICM', '.bin', 'nircmdc.exe')
+    # if OS == 'WINDOWS':
+    #    cmd = r'..\ICM\.bin\nircmdc.exe'
     if not os.path.exists(cmd):
         print("Por favor ejecute los siguientes comandos:\n")
-        print("  cd\n  git clone https://github.com/nelbren/ICM.git")
+        print("  cd..\n  git clone https://github.com/nelbren/ICM.git")
         exit(4)
 
 
@@ -70,6 +72,10 @@ def get_status_row_color(row, last_update, status, ignored):
         if not ignored:
             playSoundWithInternet(row)
         return "red", status
+    elif status == "🤖":
+        if not ignored:
+            playSoundWithIA(row)
+        return "red", status
 
     if elapsed < 25:
         return "green", status
@@ -90,6 +96,8 @@ def get_status_emoji(status):
         return "✔️"
     if status == "INTERNET":
         return "🌐"
+    if status == "IA":
+        return "🤖"
     return "❌"
 
 
@@ -107,7 +115,7 @@ def get_os_emoji(OS):
 
 
 def getOSM():
-    OS = platform.system()
+    OS = platform.system().upper()
     if OS == "Linux":
         fileModel = '/proc/device-tree/model'
         if os.path.exists(fileModel):
@@ -117,15 +125,26 @@ def getOSM():
                 OS = 'Raspberry'
     return OS.upper()
 
+def getOSL():
+    lang = '⁉'
+    OS = platform.system().upper()
+    # print("OS->", OS)
+    if OS in ["MACOS", "DARWIN"]:
+        cmd = ['osascript', '-e', 'user locale of (get system info)']
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        lang = result.stdout.decode('utf-8')
+    return lang
 
 @app.route('/')
 def index():
     server_ip = get_active_ipv4()
     # print(f"Server IP: {server_ip}")
     OS = getOSM()
+    LANG = getOSL()
     osEmoji = get_os_emoji(OS)
     return render_template('index.html', server_ip=server_ip, osEmoji=osEmoji,
-                           MY_VERSION=MY_VERSION, ICM_VERSION=ICM_VERSION)
+                           MY_VERSION=MY_VERSION, ICM_VERSION=ICM_VERSION,
+                           osLang=LANG)
 
 
 @app.route('/update', methods=['POST'])
@@ -270,6 +289,20 @@ def playSoundWithInternet(number):
         phrase += 'La buena es que he identificado'
         phrase += f'al jugador numero {number}. '
         phrase += 'La mala es que cuenta con una conexión a internet.'
+    playSound(phrase)
+
+
+def playSoundWithIA(number):
+    if OS == "WINDOWS":
+        phrase = 'Terrible. I have bad news and good news. '
+        phrase += "The good news is that I've identified "
+        phrase += f'player number {number}.'
+        phrase += 'The bad news is that he has an local artificial intelligence.'
+    else:
+        phrase = 'Terrible. Tengo una noticia mala y una buena. '
+        phrase += 'La buena es que he identificado'
+        phrase += f'al jugador numero {number}. '
+        phrase += 'La mala es que cuenta con una inteligencia artificial local.'
     playSound(phrase)
 
 

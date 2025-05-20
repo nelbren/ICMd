@@ -100,7 +100,7 @@ socket.on('update_status', function(data) {
             statusCell.className = "status-green";
             data.color = "green"
         } else {
-            if (['🌐', '❌'].includes(data.status)) {
+            if (['🌐', '🤖', '❌'].includes(data.status)) {
                 statusCell.className = "status-red2";
                 data.color = "red";
             } else {
