@@ -4,7 +4,7 @@ import os
 import re
 import time
 import socket
-import locale
+# import locale
 import requests
 import platform
 import subprocess
@@ -13,8 +13,8 @@ from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 2.2
-ICM_VERSION = 5.0
+MY_VERSION = 2.3
+ICM_VERSION = 5.1
 DEBUG = 0
 lastAlarm = 0
 secsAlarmMax = 60
@@ -144,6 +144,19 @@ def getOSL():
     return lang
 
 
+def addMVC(id, name, countLines, countInternet, countIA):
+    file = name.replace(" ", "_")
+    fileName = f"ICM/{id}_{file}.txt"
+    # print(fileName)
+    with open(fileName, "a") as myfile:
+        # currentDate = date.today()
+        ts = time.time()
+        cT = datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        line = f"{cT},{countLines},{countInternet},{countIA}\n"
+        # print("LINE->", line)
+        myfile.write(line)
+
+
 @app.route('/')
 def index():
     server_ip = get_active_ipv4()
@@ -179,7 +192,12 @@ def update():
         # countTimeout = data.get("countTimeout", 0)
         countInternet = data.get("countInternet", 0)
         countIA = data.get("countIA", 0)
-
+        mvc = data.get("MVC", 0)
+        if mvc == "":
+            mvc = 1
+        print("MVC->", mvc)
+        if mvc == 1:
+            addMVC(id, name, countLines, countInternet, countIA)
         # if status == '🤖':
         #    countIA += 1
         # print(id, status, flush=True)
