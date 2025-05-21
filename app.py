@@ -13,8 +13,8 @@ from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 2.1
-ICM_VERSION = 4.9
+MY_VERSION = 2.2
+ICM_VERSION = 5.0
 DEBUG = 0
 lastAlarm = 0
 secsAlarmMax = 60
@@ -64,24 +64,31 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
-def get_status_row_color(row, last_update, status, ignored):
+def get_status_row_color(id, row, last_update, status, ignored):
     elapsed = time.time() - last_update
-    # print(elapsed)
-    # print("STATUS ->", status)
+    # print(elapsed, "STATUS ->", status)
     if status == "🌐":
         if not ignored:
             playSoundWithInternet(row)
-        return "red", status
+        # return "red", status
     elif status == "🤖":
         if not ignored:
             playSoundWithIA(row)
-        return "red", status
+        # return "red", status
 
     if elapsed < 25:
         return "green", status
     elif elapsed < 40:
         return "yellow", status
     elif elapsed < 55:
+        if "countTimeout" not in clients_status[id]:
+            # print("👀INICIALIZACIÓN")
+            clients_status[id]["countTimeout"] = 0
+        print('ANTES clients_status ->', clients_status)
+        countTimeout = clients_status[id]["countTimeout"]
+        countTimeout += 1
+        clients_status[id]["countTimeout"] = countTimeout
+        print('DESPUES clients_status ->', clients_status)
         return "red", "⌛️"
     else:
         return "red", "❌"
@@ -125,6 +132,7 @@ def getOSM():
                 OS = 'Raspberry'
     return OS.upper()
 
+
 def getOSL():
     lang = '⁉'
     OS = platform.system().upper()
@@ -134,6 +142,7 @@ def getOSL():
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         lang = result.stdout.decode('utf-8')
     return lang
+
 
 @app.route('/')
 def index():
@@ -151,6 +160,7 @@ def index():
 def update():
     timestamp = time.time()
     data = request.json
+    # print('data->', data)
 
     id = data.get("id", "")
     if id and id in clients_status:
@@ -165,11 +175,19 @@ def update():
         status = data.get("status", "N/A")
         # print(id, status, flush=True)
         status = get_status_emoji(status)
+        countLines = data.get("countLines", "0")
+        # countTimeout = data.get("countTimeout", 0)
+        countInternet = data.get("countInternet", 0)
+        countIA = data.get("countIA", 0)
+
+        # if status == '🤖':
+        #    countIA += 1
         # print(id, status, flush=True)
         # print(data, flush=True)
         ip = request.remote_addr
         elapsed = time.time() - timestamp
-        color, status = get_status_row_color(row, time.time(), status, ignored)
+        color, status = get_status_row_color(
+            id, row, time.time(), status, ignored)
         client_status = {
             "row": row,
             "name": name,
@@ -181,13 +199,21 @@ def update():
             "ip": ip,
             "color": color,
             # "ignored": False
-            "ignored": ignored
+            "ignored": ignored,
+            "countLines": countLines,
+            # "countTimeout": countTimeout,
+            "countInternet": countInternet,
+            "countIA": countIA
         }
         ip_server = "127.0.0.1"
         if DEBUG:
             print(f"🔃➜💻{ip}🆔{id}➜🌐{ip_server}")
         # print("client_status ->", client_status)
         clients_status[id] = client_status
+
+        # countTimeout = clients_status[id]["countTimeout"]
+        # countInternet = clients_status[id]["countInternet"]
+        # countIA = clients_status[id]["countIA"]
 
         data = {
                     "row": row,
@@ -200,7 +226,11 @@ def update():
                     "ip": ip,
                     "icmVersion": icmVersion,
                     "icmTGZ": icmTGZ,
-                    "OS": OS
+                    "OS": OS,
+                    "countLines": countLines,
+                    # "countTimeout": countTimeout,
+                    "countInternet": countInternet,
+                    "countIA": countIA
                 }
         # print(f"{id} -> {data}", flush=True)
         # print('update->', data)
@@ -297,12 +327,12 @@ def playSoundWithIA(number):
         phrase = 'Terrible. I have bad news and good news. '
         phrase += "The good news is that I've identified "
         phrase += f'player number {number}.'
-        phrase += 'The bad news is that he has an local artificial intelligence.'
+        phrase += 'The bad news is that he has an local AI.'
     else:
         phrase = 'Terrible. Tengo una noticia mala y una buena. '
         phrase += 'La buena es que he identificado'
         phrase += f'al jugador numero {number}. '
-        phrase += 'La mala es que cuenta con una inteligencia artificial local.'
+        phrase += 'La mala es que cuenta con una IA local.'
     playSound(phrase)
 
 
@@ -352,7 +382,7 @@ def send_status():
         status = info.get("status", "N/A")
         ignored = info.get("ignored", False)
         color, status = get_status_row_color(
-            info['row'], info["last_update"], status, ignored)
+            id, info['row'], info["last_update"], status, ignored)
         ip = info.get("ip", "N/A")
         OS = info.get("OS", "N/A")
         icmVersion = info.get("icmVersion", "N/A")
@@ -373,6 +403,12 @@ def send_status():
             elif color == "red":
                 critical_count += 1
 
+        countLines = info.get("countLines", "N/A")
+        countTimeout = info.get("countTimeout", 0)
+        countInternet = info.get("countInternet", "N/A")
+        # print('countInternet ->', countInternet)
+        countIA = info.get("countIA", "N/A")
+
         data = {
                     "row": index,
                     "id": id,
@@ -382,9 +418,13 @@ def send_status():
                     "color": color,
                     "status": status,
                     "ip": ip,
-                    "OS": OS,
                     "icmVersion": icmVersion,
-                    "icmTGZ": icmTGZ
+                    "icmTGZ": icmTGZ,
+                    "OS": OS,
+                    "countLines": countLines,
+                    "countTimeout": countTimeout,
+                    "countInternet": countInternet,
+                    "countIA": countIA,
                 }
         socketio.emit('update_status', data)
     # Emitir los contadores al frontend

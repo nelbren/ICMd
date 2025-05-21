@@ -56,9 +56,13 @@ socket.on('update_status', function(data) {
         row.insertCell(7).textContent = formattedTime;  // Última actualización
         row.insertCell(8).textContent = elapsedText;  // Tiempo transcurrido
         row.insertCell(9).textContent = data.status || "❌";  // Estado
+        row.insertCell(10).textContent = data.countLines; // 📈
+        row.insertCell(11).textContent = data.countTimeout | "0"; // ⌛️
+        row.insertCell(12).textContent = data.countInternet // 🌐
+        row.insertCell(13).textContent = data.countIA // 🤖
 
         // Celda de Ignorar con checkbox
-        let ignoreCell = row.insertCell(10);
+        let ignoreCell = row.insertCell(14);
         let checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = getIgnoreStatus(data.id);
@@ -79,6 +83,10 @@ socket.on('update_status', function(data) {
         row.cells[7].textContent = formattedTime;
         row.cells[8].textContent = elapsedText;
         row.cells[9].textContent = data.status || "❌";
+        row.cells[10].textContent = data.countLines; // 📈
+        row.cells[11].textContent = data.countTimeout | "0"; // ⌛️
+        row.cells[12].textContent = data.countInternet // 🌐
+        row.cells[13].textContent = data.countIA // 🤖
     }
 
     let isIgnored = getIgnoreStatus(data.id);
@@ -94,7 +102,7 @@ socket.on('update_status', function(data) {
     
     // Aplicar color al campo de Estado
     let statusCell = row.cells[9];
-    //console.log('statusCell =>', data.status, statusCell)
+    console.log('statusCell =>', data.status, statusCell)
     if (!isIgnored) {
         if (data.status === "✔️") {
             statusCell.className = "status-green";
@@ -119,7 +127,7 @@ socket.on('update_status', function(data) {
 });
 
 function updateBackgroundColor() {
-    let statusCells = document.querySelectorAll("#clients-table td:nth-child(10)"); 
+    let statusCells = document.querySelectorAll("#clients-table td:nth-child(15)"); 
     let hasRed = false, hasYellow = false;
     //console.log("statusCells->", statusCells)
 
@@ -128,7 +136,7 @@ function updateBackgroundColor() {
         let isIgnored = row.querySelector("input[type='checkbox']").checked;
         //console.log('row->', row)
         let statusCell = row.cells[9];
-        //console.log("statusCell->", statusCell, statusCell.className, isIgnored)
+        console.log("statusCell->", statusCell, statusCell.className, isIgnored)
         //console.log("statusCell->", statusCell.className, isIgnored)
         if (isIgnored) {
             row.className = "gray-row"
@@ -242,7 +250,7 @@ document.getElementById("toggleOn").addEventListener("click", function() {
 document.getElementById("toggleOff").addEventListener("click", function() {
     document.querySelectorAll(".ignore-checkbox").forEach(checkbox => {
         checkbox.checked = false;
-        // Pequeña espera para asegurar la propagación del evento        
+        // Pequeña espera para asegurar la propagación del evento
         setTimeout(() => {
             checkbox.dispatchEvent(new Event("change", { bubbles: true }));
         }, 0);

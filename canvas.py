@@ -69,6 +69,17 @@ def getStudents_from_json():
     return students
 
 
+def addStudentsCounts(students):
+    for key, value in students.items():
+        # print('student->', key, value)
+        value['countTimeout'] = 0
+        value['countInternet'] = 0
+        value['countIA'] = 0
+        # print(value)
+        students[key] = value
+    return students
+
+
 def getStudents():
     if not os.path.exists("students.json"):
         print("Getting students from Canvas...")
@@ -76,6 +87,8 @@ def getStudents():
         createCSV(students)
     print("Getting students from students.json...")
     students = getStudents_from_json()
+    print(students)
+    students = addStudentsCounts(students)
     return students
 
 

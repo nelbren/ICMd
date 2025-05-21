@@ -108,7 +108,11 @@ td:nth-child(5),  /* ICM.tgz */
 td:nth-child(6),  /* IP (4ta columna) */
 td:nth-child(7),  /* Actualización (5ta columna) */
 td:nth-child(8), /* Tiempo transcurrido (6ta columna) */
-td:nth-child(9) { /* Tiempo transcurrido (6ta columna) */
+td:nth-child(9),
+td:nth-child(11),
+td:nth-child(12),
+td:nth-child(13),
+td:nth-child(14) {
     text-align: right;
 
 }
@@ -116,7 +120,7 @@ td:nth-child(9) { /* Tiempo transcurrido (6ta columna) */
 /* Centrar Estado y Ausente (Checkbox) */
 td:nth-child(4),  /* OS (4ta columna) */
 td:nth-child(10),  /* Estado (7ma columna) */
-td:nth-child(11) { /* Ausente (8va columna) */
+td:nth-child(15) { /* Ausente (8va columna) */
     text-align: center;
 }
 
