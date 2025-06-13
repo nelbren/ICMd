@@ -1,10 +1,9 @@
 # -*- coding: UTF-8 -*-
-# Internet Connection Monitor daemon - nelbren@nelbren.com @ 2025-05-20
+# Internet Connection Monitor daemon - nelbren@nelbren.com @ 2025-05-31
 import os
 import re
 import time
 import socket
-# import locale
 import requests
 import platform
 import subprocess
@@ -13,8 +12,8 @@ from canvas import getStudents
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, jsonify
 
-MY_VERSION = 2.3
-ICM_VERSION = 5.1
+MY_VERSION = 2.4
+ICM_VERSION = 5.3
 DEBUG = 0
 lastAlarm = 0
 secsAlarmMax = 60
@@ -26,8 +25,6 @@ socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
 def checkICM():
     homeDir = os.path.expanduser("~")
     cmd = os.path.join(homeDir, 'ICM', '.bin', 'nircmdc.exe')
-    # if OS == 'WINDOWS':
-    #    cmd = r'..\ICM\.bin\nircmdc.exe'
     if not os.path.exists(cmd):
         print("Por favor ejecute los siguientes comandos:\n")
         print("  cd..\n  git clone https://github.com/nelbren/ICM.git")
@@ -37,23 +34,27 @@ def checkICM():
 def checkUpdate():
     url = 'https://raw.githubusercontent.com/nelbren'
     url += '/ICMd/refs/heads/main/app.py'
-    response = requests.get(url)
-    if response.status_code == 200:
-        content = response.text
-        match = re.search(r"MY_VERSION\s*=\s*(\d+\.\d+)", content)
-        if match:
-            version = match.group(1)
-            version = float(version)
-            if version != MY_VERSION:
-                print(f"💻 ICMd v{MY_VERSION} != 🌐 ICMd v{version}"
-                      " -> Please update, with: git pull")
-                exit(1)
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            content = response.text
+            match = re.search(r"MY_VERSION\s*=\s*(\d+\.\d+)", content)
+            if match:
+                version = match.group(1)
+                version = float(version)
+                if version != MY_VERSION:
+                    print(f"💻 ICMd v{MY_VERSION} != 🌐 ICMd v{version}"
+                          " -> Please update, with: git pull")
+                    exit(1)
+            else:
+                print("No se encontró la versión.")
+                exit(2)
         else:
-            print("No se encontró la versión.")
-            exit(2)
-    else:
-        print(f"Error al acceder a la página: {response.status_code}")
-        exit(3)
+            print(f"Error al acceder a la página: {response.status_code}")
+            exit(3)
+    except Exception as e:
+        print("No puedo verificar si hay nueva actualización 😢\n")
+        print(e, "\n")
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -195,7 +196,7 @@ def update():
         mvc = data.get("MVC", 0)
         if mvc == "":
             mvc = 1
-        print("MVC->", mvc)
+        # print("MVC->", mvc)
         if mvc == 1:
             addMVC(id, name, countLines, countInternet, countIA)
         # if status == '🤖':
