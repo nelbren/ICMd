@@ -2,7 +2,7 @@
 
 |Version|Timestamp|Updated on OS|Supported on OS|
 |--:|--:|:--:|:--:|
-|`2.4`|`2025-06-13 12:20`|🍎|🍎🪟|
+|`2.5`|`2026-06-08 02:40`|🍎|🍎🪟|
 
 ## **Real-Time Client Monitoring Dashboard**  
 
@@ -32,6 +32,17 @@ This dashboard provides real-time monitoring of connected clients, displaying th
 ✅ **Counters** – Displays statistics such as:  
    - Total **active/inactive** clients  
    - Number of clients in each status category (**OK, Warning, Critical**)  
+
+✅ **Shared Content Directory** 🆕
+
+A configurable external directory (environment variable: SHARED\_DIR) can be used to publish content through the web application. Files placed in this directory are automatically available to authorized users and may include:
+
+- HTML pages
+- Images
+- PDF documents
+- Other approved static resources
+
+Because the directory is located outside the repository, content can be updated independently of the application source code and deployment process.
 
 This system ensures **efficient client tracking, immediate status awareness, and a clear visual representation of critical conditions**. 🚀
 

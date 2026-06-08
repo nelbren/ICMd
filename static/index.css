@@ -1,7 +1,7 @@
 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 th, td { padding: 10px; border: 1px solid #ddd; }
 th { text-align: center; }
-td { padding: 10px; }
+td { padding: 10px; vertical-align: middle; }
 .right { text-align: right; }
 .left { text-align: left; }
 .green { background-color: lightgreen; }
@@ -297,4 +297,19 @@ a {
     border-radius: 5px;
     border: 2px solid black;
     font-size: 14px;
+}
+
+.center_cb {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    vertical-align: middle;
+}
+
+.td-checkbox {
+    text-align: center;
+}
+
+.td-checkbox input {
+    margin: 0;
 }

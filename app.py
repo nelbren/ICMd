@@ -10,16 +10,41 @@ import subprocess
 from datetime import datetime, date
 from canvas import getStudents
 from flask_socketio import SocketIO
-from flask import Flask, render_template, request, jsonify
+from flask import (
+    Flask, render_template, request, jsonify,
+    abort, send_from_directory, render_template_string
+)
+from pathlib import Path
+from werkzeug.utils import safe_join
 
-MY_VERSION = 2.4
-ICM_VERSION = 5.3
+MY_VERSION = 2.5
+ICM_VERSION = 6.4
 DEBUG = 0
 lastAlarm = 0
 secsAlarmMax = 60
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
+
+SHARED_DIR = Path(
+    os.environ.get("SHARED_DIR", "/Users/nelbren/shared_content")
+).resolve()
+
+ALLOWED_EXTENSIONS = {
+    ".html",
+    ".htm",
+    ".md",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".pdf",
+    ".zip",
+    ".txt",
+    ".cpp",
+    ".h"
+}
 
 
 def checkICM():
@@ -193,6 +218,7 @@ def update():
         # countTimeout = data.get("countTimeout", 0)
         countInternet = data.get("countInternet", 0)
         countIA = data.get("countIA", 0)
+        CPUandRAM = data.get("CPUandRAM", "N/A")
         mvc = data.get("MVC", 0)
         if mvc == "":
             mvc = 1
@@ -222,7 +248,8 @@ def update():
             "countLines": countLines,
             # "countTimeout": countTimeout,
             "countInternet": countInternet,
-            "countIA": countIA
+            "countIA": countIA,
+            "CPUandRAM": CPUandRAM
         }
         ip_server = "127.0.0.1"
         if DEBUG:
@@ -249,7 +276,8 @@ def update():
                     "countLines": countLines,
                     # "countTimeout": countTimeout,
                     "countInternet": countInternet,
-                    "countIA": countIA
+                    "countIA": countIA,
+                    "CPUandRAM": CPUandRAM
                 }
         # print(f"{id} -> {data}", flush=True)
         # print('update->', data)
@@ -427,6 +455,7 @@ def send_status():
         countInternet = info.get("countInternet", "N/A")
         # print('countInternet ->', countInternet)
         countIA = info.get("countIA", "N/A")
+        CPUandRAM = info.get("CPUandRAM", "N/A")
 
         data = {
                     "row": index,
@@ -444,6 +473,7 @@ def send_status():
                     "countTimeout": countTimeout,
                     "countInternet": countInternet,
                     "countIA": countIA,
+                    "CPUandRAM": CPUandRAM
                 }
         socketio.emit('update_status', data)
     # Emitir los contadores al frontend
@@ -483,6 +513,92 @@ def get_active_ipv4():
 def handle_ping():
     """ Responde a los pings del frontend """
     socketio.emit('pong_client', {'timestamp': time.time()})
+
+
+def invalid_access(status):
+    return render_template_string("""
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-family: sans-serif;
+}
+
+.message {
+    text-align: center;
+    font-size: 4rem;
+}
+
+.status {
+    display: block;
+    margin-top: 20px;
+    font-size: 2rem;
+}
+</style>
+</head>
+<body>
+    <div class="message">
+        🔐 👉 {{ status }}
+    </div>
+</body>
+</html>
+""", status=status)
+
+
+@app.route("/files")
+def list_files():
+    if not SHARED_DIR.exists():
+        abort(404)
+    files = []
+    for path in sorted(SHARED_DIR.iterdir()):
+        if path.is_file() and path.suffix.lower() in ALLOWED_EXTENSIONS:
+            files.append(path.name)
+    ok = False
+    status = "⁉️"
+    ip = request.remote_addr
+    for index, (id, info) in enumerate(clients_status.items(), start=1):
+        if "ip" in info:
+            if info['ip'] == ip:
+                status = info['status']
+                if status not in ["🌐", "🤖"]:
+                    ok = True
+                break
+    if not ok:
+        return invalid_access(status)
+
+    return render_template_string("""
+    <h1>🔓 👉 {{ status }}</h1>
+    <ul>
+    {% for file in files %}
+        <li>
+            <a href="/files/{{ file }}" target="_blank">
+                {{ file }}
+            </a>
+        </li>
+    {% endfor %}
+    </ul>
+    """, files=files, status=status)
+
+
+@app.route("/files/<path:filename>")
+def serve_file(filename):
+    safe_path = safe_join(str(SHARED_DIR), filename)
+    if safe_path is None:
+        abort(403)
+    path = Path(safe_path)
+    if not path.exists() or not path.is_file():
+        abort(404)
+    if path.suffix.lower() not in ALLOWED_EXTENSIONS:
+        abort(403)
+    return send_from_directory(SHARED_DIR, filename)
 
 
 OS = getOSM()

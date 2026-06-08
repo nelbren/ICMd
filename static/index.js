@@ -60,9 +60,12 @@ socket.on('update_status', function(data) {
         row.insertCell(11).textContent = data.countTimeout | "0"; // ⌛️
         row.insertCell(12).textContent = data.countInternet // 🌐
         row.insertCell(13).textContent = data.countIA // 🤖
+        let cellCPUAndRAM = row.insertCell(14)
+        let CPUandRAM2 = data.CPUandRAM.replace("|", "<br>")
+        cellCPUAndRAM.innerHTML = "<span style='font-size: 9px;'>" + CPUandRAM2 + "</span>" // ⚙️|🧠
 
         // Celda de Ignorar con checkbox
-        let ignoreCell = row.insertCell(14);
+        let ignoreCell = row.insertCell(15); // COL 15 👀 <-- OJO
         let checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = getIgnoreStatus(data.id);
@@ -71,6 +74,12 @@ socket.on('update_status', function(data) {
         };
         checkbox.className = "ignore-checkbox";
         checkbox.setAttribute('data-user-id' , data.id);
+        //ignoreCell.className = "center_cb"
+        ignoreCell.className = "td-checkbox"
+        //<div class="checkbox-center">
+        //    <input type="checkbox">
+        //</div>
+        //checkbox.className = "center_cb"
 
         ignoreCell.appendChild(checkbox);
     } else {
@@ -87,6 +96,9 @@ socket.on('update_status', function(data) {
         row.cells[11].textContent = data.countTimeout | "0"; // ⌛️
         row.cells[12].textContent = data.countInternet // 🌐
         row.cells[13].textContent = data.countIA // 🤖
+        let cellCPUAndRAM = row.cells[14]
+        let CPUandRAM2 = data.CPUandRAM.replace("|", "<br>");
+        cellCPUAndRAM.innerHTML = "<span style='font-size: 9px;'>" + CPUandRAM2 + "</span>" // ⚙️|🧠
     }
 
     let isIgnored = getIgnoreStatus(data.id);
@@ -127,7 +139,8 @@ socket.on('update_status', function(data) {
 });
 
 function updateBackgroundColor() {
-    let statusCells = document.querySelectorAll("#clients-table td:nth-child(15)"); 
+    // COL 16 👀 <-- OJO
+    let statusCells = document.querySelectorAll("#clients-table td:nth-child(16)"); 
     let hasRed = false, hasYellow = false;
     //console.log("statusCells->", statusCells)
 
