@@ -15,24 +15,31 @@ from flask import (
     abort, send_from_directory, render_template_string
 )
 from pathlib import Path
-from werkzeug.utils import safe_join
+# from werkzeug.utils import safe_join
+from werkzeug.security import safe_join
 
-MY_VERSION = 2.5
-ICM_VERSION = 6.4
+MY_VERSION = 2.6
+ICM_VERSION = 6.5
 DEBUG = 0
 lastAlarm = 0
 secsAlarmMax = 60
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
+# socketio = SocketIO(app, cors_allowed_origins="*", ssl_context=None)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-SHARED_DIR = Path(
-    os.environ.get("SHARED_DIR", "/Users/nelbren/shared_content")
-).resolve()
+shared_dir = os.environ.get("SHARED_DIR")
+SHARED_DIR = (
+    Path(shared_dir).resolve()
+    if shared_dir
+    else None
+)
 
 ALLOWED_EXTENSIONS = {
     ".html",
     ".htm",
+    ".css",
+    ".js",
     ".md",
     ".png",
     ".jpg",
@@ -43,7 +50,8 @@ ALLOWED_EXTENSIONS = {
     ".zip",
     ".txt",
     ".cpp",
-    ".h"
+    ".h",
+    ".mp3"
 }
 
 
@@ -110,11 +118,11 @@ def get_status_row_color(id, row, last_update, status, ignored):
         if "countTimeout" not in clients_status[id]:
             # print("👀INICIALIZACIÓN")
             clients_status[id]["countTimeout"] = 0
-        print('ANTES clients_status ->', clients_status)
+        # print('ANTES clients_status ->', clients_status)
         countTimeout = clients_status[id]["countTimeout"]
         countTimeout += 1
         clients_status[id]["countTimeout"] = countTimeout
-        print('DESPUES clients_status ->', clients_status)
+        # print('DESPUES clients_status ->', clients_status)
         return "red", "⌛️"
     else:
         return "red", "❌"
@@ -198,8 +206,9 @@ def index():
 @app.route('/update', methods=['POST'])
 def update():
     timestamp = time.time()
-    data = request.json
-    # print('data->', data)
+    # data = request.json
+    data = request.get_json(silent=True) or {}
+    # print('update(): data->', data)
 
     id = data.get("id", "")
     if id and id in clients_status:
@@ -219,6 +228,12 @@ def update():
         countInternet = data.get("countInternet", 0)
         countIA = data.get("countIA", 0)
         CPUandRAM = data.get("CPUandRAM", "N/A")
+        if 'countSD' in clients_status[id]:
+            countSD = clients_status[id]['countSD']
+        else:
+            countSD = data.get("countSD", 0)
+        # print("1 =================> clients_status ->", clients_status)
+        # print("1 =================> data ->", data)
         mvc = data.get("MVC", 0)
         if mvc == "":
             mvc = 1
@@ -249,12 +264,13 @@ def update():
             # "countTimeout": countTimeout,
             "countInternet": countInternet,
             "countIA": countIA,
-            "CPUandRAM": CPUandRAM
+            "CPUandRAM": CPUandRAM,
+            "countSD": countSD
         }
         ip_server = "127.0.0.1"
         if DEBUG:
             print(f"🔃➜💻{ip}🆔{id}➜🌐{ip_server}")
-        # print("client_status ->", client_status)
+        # print("2 =================> client_status ->", client_status)
         clients_status[id] = client_status
 
         # countTimeout = clients_status[id]["countTimeout"]
@@ -277,7 +293,8 @@ def update():
                     # "countTimeout": countTimeout,
                     "countInternet": countInternet,
                     "countIA": countIA,
-                    "CPUandRAM": CPUandRAM
+                    "CPUandRAM": CPUandRAM,
+                    "countSD": countSD
                 }
         # print(f"{id} -> {data}", flush=True)
         # print('update->', data)
@@ -409,9 +426,9 @@ def upload(id):
             socketio.emit('update_status', client_status)
             number = client_status['row']
             playSoundAtEnd(number)
-            return f'¡📦 {uploadName} ({detail}) ✅ Upload successful 😎!'
+            return f'¡📦 {uploadName} ({detail}) ✅ Upload successful 😎!', 200
         else:
-            return f'🚫 Nice try {id} 🙃!'
+            return f'🚫 Nice try {id} 🙃!', 200
 
 
 @socketio.on('request_status')
@@ -456,6 +473,7 @@ def send_status():
         # print('countInternet ->', countInternet)
         countIA = info.get("countIA", "N/A")
         CPUandRAM = info.get("CPUandRAM", "N/A")
+        countSD = info.get("countSD", "N/A")
 
         data = {
                     "row": index,
@@ -473,8 +491,10 @@ def send_status():
                     "countTimeout": countTimeout,
                     "countInternet": countInternet,
                     "countIA": countIA,
-                    "CPUandRAM": CPUandRAM
+                    "CPUandRAM": CPUandRAM,
+                    "countSD": countSD
                 }
+        # print("UPDATE_STATUS ->", data)
         socketio.emit('update_status', data)
     # Emitir los contadores al frontend
     # print(ok_count, warning_count, critical_count)
@@ -553,14 +573,12 @@ body {
 """, status=status)
 
 
-@app.route("/files")
-def list_files():
-    if not SHARED_DIR.exists():
-        abort(404)
-    files = []
-    for path in sorted(SHARED_DIR.iterdir()):
-        if path.is_file() and path.suffix.lower() in ALLOWED_EXTENSIONS:
-            files.append(path.name)
+@app.route("/files/")
+@app.route("/files/<path:subdir>")
+def list_files(subdir=""):
+    if not SHARED_DIR:
+        abort(404, description="SHARED_DIR don't exist!")
+
     ok = False
     status = "⁉️"
     ip = request.remote_addr
@@ -570,26 +588,69 @@ def list_files():
                 status = info['status']
                 if status not in ["🌐", "🤖"]:
                     ok = True
+                    clients_status[id]['countSD'] += 1
                 break
+
     if not ok:
         return invalid_access(status)
 
+    base_path = SHARED_DIR
+
+    safe_path = safe_join(str(base_path), subdir)
+    if safe_path is None:
+        abort(403)
+    current_dir = Path(safe_path)
+    if not current_dir.exists() or not current_dir.is_dir():
+        abort(404)
+
+    entries = []
+
+    for path in sorted(current_dir.iterdir()):
+        entries.append({
+            "name": path.name,
+            "is_dir": path.is_dir(),
+            "relative": str(
+                path.relative_to(base_path)
+            ).replace("\\", "/")
+        })
+
+    parent = str(Path(subdir).parent).replace("\\", "/") if subdir else None
+
     return render_template_string("""
     <h1>🔓 👉 {{ status }}</h1>
+
+    <h2>📁 {{ subdir or '/' }}</h2>
+
+    {% if parent %}
+        <p><a href="/files/{{ parent }}">⬆️ ..</a></p>
+    {% endif %}
+
     <ul>
-    {% for file in files %}
+    {% for item in entries %}
         <li>
-            <a href="/files/{{ file }}" target="_blank">
-                {{ file }}
+        {% if item.is_dir %}
+            📁 <a href="/files/{{ item.relative }}">
+                {{ item.name }}
             </a>
+        {% elif item.name.lower().endswith((".html", ".htm", ".css")) %}
+            🌐 <a href="/view/{{ item.relative }}" target="_blank">
+                {{ item.name }}
+            </a>
+        {% else %}
+            📄 <a href="/download/{{ item.relative }}" target="_blank">
+                {{ item.name }}
+            </a>
+        {% endif %}
         </li>
     {% endfor %}
     </ul>
-    """, files=files, status=status)
+    """, entries=entries, subdir=subdir, status=status, parent=parent)
 
 
-@app.route("/files/<path:filename>")
+@app.route("/download/<path:filename>")
 def serve_file(filename):
+    if not SHARED_DIR:
+        abort(404, description="SHARED_DIR don't exist!")
     safe_path = safe_join(str(SHARED_DIR), filename)
     if safe_path is None:
         abort(403)
@@ -601,6 +662,57 @@ def serve_file(filename):
     return send_from_directory(SHARED_DIR, filename)
 
 
+@app.route("/view/<path:filename>")
+def view_file(filename):
+    if not SHARED_DIR:
+        abort(404, description="SHARED_DIR don't exist!")
+    safe_path = safe_join(str(SHARED_DIR), filename)
+    if safe_path is None:
+        abort(403)
+    path = Path(safe_path)
+    if not path.exists() or not path.is_file():
+        abort(404)
+    if path.suffix.lower() not in ALLOWED_EXTENSIONS:
+        abort(403)
+    return send_from_directory(
+        directory=str(SHARED_DIR),
+        path=filename,
+        as_attachment=False
+    )
+
+
+@app.route("/assets/<path:filename>")
+def serve_assets(filename):
+    if not SHARED_DIR:
+        abort(404, description="SHARED_DIR don't exist!")
+    assets_dir = SHARED_DIR / "assets"
+    safe_path = safe_join(str(assets_dir), filename)
+    if safe_path is None:
+        abort(403)
+    path = Path(safe_path)
+    if not path.exists() or not path.is_file():
+        abort(404)
+    if path.suffix.lower() not in ALLOWED_EXTENSIONS:
+        abort(403)
+    return send_from_directory(
+        directory=str(assets_dir),
+        path=filename,
+        as_attachment=False
+    )
+
+
+@app.route("/status/<id2Find>")
+def status(id2Find):
+    for id, info in clients_status.items():
+        if id == id2Find:
+            return jsonify({
+                "name": info["name"],
+                "shared_dir": 1 if SHARED_DIR else 0
+            })
+
+    abort(404, description=f"{id2Find} no existe!")
+
+
 OS = getOSM()
 checkICM()
 checkUpdate()
@@ -609,7 +721,8 @@ currentDate = date.today()
 clients_status = getStudents()
 print(f'\n⚡️ Energizado por 🌐 ICMd v{MY_VERSION}'
       f' 🔌 ejecutandose en {osEmoji} el {currentDate}\n')
+print(f"📁 SHARED_DIR -> {SHARED_DIR}\n")
 update_uploads()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True, ssl_context=None)

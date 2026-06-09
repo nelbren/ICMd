@@ -33,8 +33,9 @@ socket.on('update_status', function(data) {
     let formattedTime = "N/A";
     let elapsedText = "N/A";
     let elapsedSeconds = 0;
-    if (data.id == '12351121')
-        console.log('update_status', data)
+    // console.log('==== 1 socket.on -> update_status', data)
+    //if (data.id == '12345')
+    //    console.log('==== 2 socket.on -> update_status', data)
 
     if (data.timestamp) {
         let timestamp = new Date(data.timestamp * 1000);
@@ -59,13 +60,14 @@ socket.on('update_status', function(data) {
         row.insertCell(10).textContent = data.countLines; // 📈
         row.insertCell(11).textContent = data.countTimeout | "0"; // ⌛️
         row.insertCell(12).textContent = data.countInternet // 🌐
-        row.insertCell(13).textContent = data.countIA // 🤖
+        row.insertCell(13).textContent = data.countIA || "N/A" // 🤖
         let cellCPUAndRAM = row.insertCell(14)
         let CPUandRAM2 = data.CPUandRAM.replace("|", "<br>")
         cellCPUAndRAM.innerHTML = "<span style='font-size: 9px;'>" + CPUandRAM2 + "</span>" // ⚙️|🧠
+        row.insertCell(15).textContent = data.countSD || "N/A" // 🔓
 
         // Celda de Ignorar con checkbox
-        let ignoreCell = row.insertCell(15); // COL 15 👀 <-- OJO
+        let ignoreCell = row.insertCell(16); // COL 15 👀 <-- OJO
         let checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = getIgnoreStatus(data.id);
@@ -93,12 +95,13 @@ socket.on('update_status', function(data) {
         row.cells[8].textContent = elapsedText;
         row.cells[9].textContent = data.status || "❌";
         row.cells[10].textContent = data.countLines; // 📈
-        row.cells[11].textContent = data.countTimeout | "0"; // ⌛️
+        row.cells[11].textContent = data.countTimeout || "0"; // ⌛️
         row.cells[12].textContent = data.countInternet // 🌐
         row.cells[13].textContent = data.countIA // 🤖
         let cellCPUAndRAM = row.cells[14]
         let CPUandRAM2 = data.CPUandRAM.replace("|", "<br>");
         cellCPUAndRAM.innerHTML = "<span style='font-size: 9px;'>" + CPUandRAM2 + "</span>" // ⚙️|🧠
+        row.cells[15].textContent = data.countSD // 🔓
     }
 
     let isIgnored = getIgnoreStatus(data.id);
@@ -114,7 +117,7 @@ socket.on('update_status', function(data) {
     
     // Aplicar color al campo de Estado
     let statusCell = row.cells[9];
-    console.log('statusCell =>', data.status, statusCell)
+    // console.log('statusCell =>', data.status, statusCell)
     if (!isIgnored) {
         if (data.status === "✔️") {
             statusCell.className = "status-green";
@@ -139,7 +142,7 @@ socket.on('update_status', function(data) {
 });
 
 function updateBackgroundColor() {
-    // COL 16 👀 <-- OJO
+    // COL 17 👀 <-- OJO
     let statusCells = document.querySelectorAll("#clients-table td:nth-child(16)"); 
     let hasRed = false, hasYellow = false;
     //console.log("statusCells->", statusCells)
@@ -149,7 +152,7 @@ function updateBackgroundColor() {
         let isIgnored = row.querySelector("input[type='checkbox']").checked;
         //console.log('row->', row)
         let statusCell = row.cells[9];
-        console.log("statusCell->", statusCell, statusCell.className, isIgnored)
+        //console.log("statusCell->", statusCell, statusCell.className, isIgnored)
         //console.log("statusCell->", statusCell.className, isIgnored)
         if (isIgnored) {
             row.className = "gray-row"
